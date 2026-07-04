@@ -1,0 +1,58 @@
+{
+  "colors": [
+    {
+      "id": "red",
+      "name": "Rally Red",
+      "hex": "#e23b2e",
+      "price": 0
+    },
+    {
+      "id": "blue",
+      "name": "Race Blue",
+      "hex": "#2f6fe4",
+      "price": 0
+    },
+    {
+      "id": "green",
+      "name": "Pit Green",
+      "hex": "#2fa14b",
+      "price": 0
+    },
+    {
+      "id": "yellow",
+      "name": "Plate Yellow",
+      "hex": "#f2c928",
+      "price": 400
+    },
+    {
+      "id": "orange",
+      "name": "Burn Orange",
+      "hex": "#f07020",
+      "price": 400
+    },
+    {
+      "id": "purple",
+      "name": "Grape Haze",
+      "hex": "#8a4fd8",
+      "price": 600
+    },
+    {
+      "id": "white",
+      "name": "Factory White",
+      "hex": "#eeeeee",
+      "price": 800
+    },
+    {
+      "id": "black",
+      "name": "Night Black",
+      "hex": "#23252a",
+      "price": 800
+    },
+    {
+      "id": "mint",
+      "name": "Wolf Mint",
+      "hex": "#4fd8b8",
+      "price": 1500
+    }
+  ]
+}

@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pit Bike Rally — Skywolf Studios</title>
+<link rel="stylesheet" href="css/game.css">
+<link rel="icon" type="image/png" href="assets/favicon.png">
+<script>
+(function(){
+var SWS_EMBED=/[?&]embed=1(&|$)/.test(location.search);
+window.SWS_EMBED=SWS_EMBED;
+window.SWS_EXIT=function(){
+if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'close'},'*');}catch(e){} return;}
+location.href='https://lucidwinds.com/portal/';
+};
+if(SWS_EMBED&&parent!==window){try{parent.postMessage({sws:'ready'},'*');}catch(e){}}
+})();
+</script>
+<script src="https://lucidwinds.com/sunbeam-sdk.js?v=2"></script>
+<script>
+if (window.Sunbeam) {
+  Sunbeam.init({ gameId: "pitbike-rally" })
+    .catch(function(){ /* network blocked — earn calls degrade silently */ });
+}
+</script>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- MENU -->
+<div class="screen" id="scr-menu">
+  <div class="menu-tools">
+    <button class="icon-btn" id="btn-mute" aria-label="Mute">🔊</button>
+    <button class="icon-btn" id="btn-fs" aria-label="Fullscreen">⛶</button>
+  </div>
+  <div class="logo-kick banner">SKYWOLF STUDIOS PRESENTS</div>
+  <h1 class="logo banner">PIT BIKE<br><b>RALLY</b></h1>
+  <img class="menu-hero" id="menu-hero" src="assets/art/bike/bike_ride_f01.png" alt="">
+  <div class="logo-sub">4 riders · 1 screen · dirt everywhere</div>
+  <div class="menu-btns">
+    <button class="plate-btn" id="btn-race">RACE ▸</button>
+    <button class="ghost-btn" id="btn-garage">GARAGE &amp; PARTS SHOP</button>
+  </div>
+  <div class="menu-foot">
+    <span class="wallet-chip" id="menu-wallet">0 ⚙</span>
+    <div id="menu-stats" style="margin-top:10px;"></div>
+  </div>
+  <button class="sws-exit" id="btn-sws-exit">← All Sky Wolf games</button>
+</div>
+
+<!-- TRACK SELECT -->
+<div class="screen" id="scr-tracks">
+  <div class="scr-head">
+    <button class="ghost-btn" id="tracks-back">◂ Back</button>
+    <h2 class="banner">Pick your track</h2>
+    <span class="wallet-chip" id="tracks-wallet">0 ⚙</span>
+  </div>
+  <div class="scr-body"><div id="track-list"></div></div>
+</div>
+
+<!-- GARAGE -->
+<div class="screen" id="scr-garage">
+  <div class="scr-head">
+    <button class="ghost-btn" id="garage-back">◂ Back</button>
+    <h2 class="banner">Garage</h2>
+    <span class="wallet-chip" id="garage-wallet">0 ⚙</span>
+  </div>
+  <div class="scr-body">
+    <div class="garage-grid">
+      <div>
+        <div class="gcard" style="margin-bottom:14px;">
+          <div class="garage-hero-wrap"><img class="garage-hero" id="garage-hero" src="assets/art/bike/bikeview_ride_a.png" alt=""></div>
+          <h3>Bike stats</h3>
+          <div class="stat"><span>Top speed</span><div class="bar"><i id="st-top"></i></div></div>
+          <div class="stat"><span>Accel</span><div class="bar"><i id="st-acc"></i></div></div>
+          <div class="stat"><span>Handling</span><div class="bar"><i id="st-han"></i></div></div>
+          <div class="stat"><span>Landing</span><div class="bar"><i id="st-jmp"></i></div></div>
+          <div class="stat"><span>Nitro</span><div class="bar"><i id="st-nit"></i></div></div>
+        </div>
+        <div class="gcard">
+          <h3>Paint &amp; plate</h3>
+          <div id="color-wrap"></div>
+          <div class="plate-row">
+            <button class="step-btn" id="plate-dn" aria-label="Plate number down">−</button>
+            <div class="plate-preview" id="plate-num">7</div>
+            <button class="step-btn" id="plate-up" aria-label="Plate number up">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="gcard">
+        <h3>Parts shop — tap to buy &amp; equip</h3>
+        <div id="parts-wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RACE (screen holder; canvas + HUD do the work) -->
+<div class="screen" id="scr-race" style="background:transparent; pointer-events:none;"></div>
+
+<!-- RESULTS -->
+<div class="screen" id="scr-results">
+  <div class="res-card">
+    <img class="res-hero" id="res-hero" src="assets/art/bike/bikeview_victory_f01.png" alt="">
+    <span class="res-place banner" id="res-place">1st PLACE!</span>
+    <div id="res-rows"></div>
+    <div class="res-total-row">
+      <span style="font-weight:900; font-style:italic; text-transform:uppercase;">Race total</span>
+      <span id="res-total">+0 ⚙</span>
+    </div>
+    <div class="res-total-row" style="margin:0 0 4px;">
+      <span style="color:#9a9da8; font-size:13px;">Wallet</span>
+      <span class="wallet-chip" id="res-wallet">0 ⚙</span>
+    </div>
+    <div id="res-order"></div>
+    <div class="res-btns">
+      <button class="plate-btn" id="res-again">RACE AGAIN</button>
+      <button class="plate-btn" id="res-next">NEXT TRACK</button>
+      <button class="ghost-btn" id="res-garage">GARAGE</button>
+      <button class="ghost-btn" id="res-menu">MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-top">
+    <span class="chip" id="hud-pos">1st</span>
+    <span class="chip" id="hud-lap">LAP 1/3</span>
+    <span class="chip" id="hud-time">0:00.0</span>
+    <span class="chip" id="hud-cash">+0⚙</span>
+    <span class="chip" id="hud-style" style="border:none; background:transparent;">0 STYLE</span>
+  </div>
+  <button id="btn-pause" aria-label="Pause">II</button>
+  <div id="count">3</div>
+  <div id="nitro-pips"></div>
+</div>
+
+<!-- TOUCH CONTROLS -->
+<div id="controls">
+  <div id="joy-zone"></div>
+  <div id="joy-base"><div id="joy-stick"></div></div>
+  <div id="joy-hint">◂ Touch &amp; slide to steer ▸</div>
+  <button class="ctl-btn" id="btn-nitro">NITRO</button>
+  <button class="ctl-btn" id="btn-brake">BRAKE</button>
+  <button class="ctl-btn" id="btn-gas">GAS</button>
+</div>
+
+<!-- PAUSE -->
+<div id="pause-ov">
+  <div class="pause-card">
+    <h2 class="banner">Paused</h2>
+    <button class="plate-btn" id="pause-resume">RESUME</button>
+    <button class="ghost-btn" id="pause-restart">RESTART RACE</button>
+    <button class="ghost-btn" id="pause-quit">QUIT TO MENU</button>
+  </div>
+</div>
+
+<!-- ROTATE -->
+<div id="rotate-ov">
+  <div class="phone"></div>
+  <h2 class="banner">Rotate to landscape</h2>
+  <p>Pit Bike Rally races sideways — turn your phone to ride.</p>
+</div>
+
+<script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "place": [
+    1500,
+    1000,
+    600,
+    300
+  ],
+  "bestLap": 250,
+  "styleRate": 2,
+  "styleCap": 500,
+  "pickupCash": [
+    100,
+    300
+  ],
+  "startWallet": 2500,
+  "dailyFirstWin": 500
+}

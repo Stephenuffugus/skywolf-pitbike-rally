@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Pit Bike Rally — Skywolf Studios</title>
+<style>
+:root{
+  --ink:#17181c; --coal:#1e2026; --coal2:#26282f;
+  --plate:#f2c928; --burn:#f07020; --dust:#c9c2b4;
+  --grip:#8ef07f; --nitro:#5fc9ff;
+}
+*{ margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body{ width:100%; height:100%; overflow:hidden; background:var(--ink);
+  font-family:-apple-system,'Segoe UI',system-ui,Roboto,sans-serif; color:var(--dust);
+  touch-action:none; overscroll-behavior:none; user-select:none; -webkit-user-select:none; }
+canvas#game{ position:fixed; inset:0; display:block; }
+
+/* ---- shared type ---- */
+.banner{ font-weight:900; font-style:italic; text-transform:uppercase;
+  letter-spacing:-0.5px; transform:skewX(-8deg); display:inline-block; }
+.plate-btn{ background:var(--plate); color:var(--ink); border:none; border-radius:14px;
+  font-weight:900; font-style:italic; text-transform:uppercase; letter-spacing:0.2px;
+  padding:14px 26px; font-size:18px; box-shadow:0 4px 0 #a8890f; cursor:pointer; }
+.plate-btn:active{ transform:translateY(3px); box-shadow:0 1px 0 #a8890f; }
+.ghost-btn{ background:transparent; color:var(--dust); border:2px solid #3a3d46; border-radius:12px;
+  font-weight:800; text-transform:uppercase; padding:10px 18px; font-size:14px; cursor:pointer; }
+.wallet-chip{ background:var(--coal2); border:2px solid #3a3d46; border-radius:999px;
+  padding:7px 16px; font-weight:900; font-size:16px; color:var(--plate); }
+.wallet-chip.flash{ animation:flash .5s; }
+@keyframes flash{ 0%,100%{ border-color:#3a3d46 } 30%{ border-color:#e23b2e; color:#e23b2e } }
+
+/* ---- screens ---- */
+.screen{ position:fixed; inset:0; display:none; flex-direction:column; z-index:20;
+  background:
+    repeating-linear-gradient(115deg, rgba(255,255,255,0.018) 0 3px, transparent 3px 26px),
+    radial-gradient(120% 90% at 50% -10%, #23252c 0%, var(--ink) 62%);
+  padding:calc(14px + env(safe-area-inset-top)) calc(20px + env(safe-area-inset-right))
+          calc(14px + env(safe-area-inset-bottom)) calc(20px + env(safe-area-inset-left)); }
+.screen.show{ display:flex; }
+.scr-head{ display:flex; align-items:center; gap:14px; margin-bottom:10px; flex:0 0 auto; }
+.scr-head h2{ font-size:26px; color:#fff; margin-right:auto; }
+.scr-body{ flex:1 1 auto; overflow-y:auto; touch-action:pan-y; -webkit-overflow-scrolling:touch; padding-bottom:10px; }
+
+/* ---- menu ---- */
+#scr-menu{ align-items:center; justify-content:center; text-align:center; }
+.logo-kick{ color:var(--burn); font-size:15px; letter-spacing:4px; font-weight:800; }
+.logo{ font-size:min(13vw,74px); line-height:0.95; color:#fff; margin:6px 0 2px; }
+.logo b{ color:var(--plate); }
+.logo-sub{ font-size:13px; letter-spacing:2.5px; color:#8b8e99; text-transform:uppercase; margin-bottom:26px; }
+.menu-btns{ display:flex; flex-direction:column; gap:14px; width:min(320px,80vw); }
+.menu-btns .plate-btn{ font-size:22px; padding:16px; }
+.menu-foot{ margin-top:22px; font-size:13px; color:#8b8e99; }
+.menu-tools{ position:absolute; top:calc(12px + env(safe-area-inset-top)); right:calc(16px + env(safe-area-inset-right)); display:flex; gap:10px; }
+.icon-btn{ width:44px; height:44px; border-radius:12px; background:var(--coal2); border:2px solid #3a3d46;
+  color:var(--dust); font-size:19px; cursor:pointer; }
+
+/* ---- track select ---- */
+#track-list{ display:grid; grid-template-columns:repeat(auto-fill,minmax(210px,1fr)); gap:12px; }
+.track-card{ text-align:left; background:var(--coal); border:2px solid #34363e; border-radius:16px;
+  padding:14px 16px; cursor:pointer; display:flex; flex-direction:column; gap:3px; color:var(--dust);
+  position:relative; overflow:hidden; }
+.track-card::after{ content:''; position:absolute; right:-18px; top:-18px; width:64px; height:64px;
+  background:var(--plate); transform:rotate(45deg); opacity:0.13; }
+.track-card:active{ border-color:var(--plate); }
+.tnum{ font-weight:900; font-style:italic; color:var(--burn); font-size:13px; }
+.tname{ font-weight:900; font-style:italic; text-transform:uppercase; color:#fff; font-size:19px; }
+.tmeta{ font-size:13px; color:#9a9da8; }
+.tbest{ font-size:12px; font-weight:800; color:var(--plate); margin-top:4px; letter-spacing:1px; }
+
+/* ---- garage ---- */
+.garage-grid{ display:grid; grid-template-columns:280px 1fr; gap:18px; }
+@media (max-width:760px){ .garage-grid{ grid-template-columns:1fr; } }
+.gcard{ background:var(--coal); border:2px solid #34363e; border-radius:16px; padding:14px 16px; }
+.gcard h3{ font-size:15px; text-transform:uppercase; font-style:italic; color:#fff; margin-bottom:10px; letter-spacing:1px; }
+.stat{ display:flex; align-items:center; gap:10px; margin-bottom:9px; font-size:12px; font-weight:800;
+  text-transform:uppercase; letter-spacing:1px; color:#9a9da8; }
+.stat span{ width:82px; flex:0 0 auto; }
+.bar{ flex:1; height:12px; background:#111318; border-radius:99px; overflow:hidden; }
+.bar i{ display:block; height:100%; border-radius:99px; background:linear-gradient(90deg,var(--burn),var(--plate)); transition:width .3s; }
+.slot-box{ margin-bottom:14px; }
+.slot-title{ font-weight:900; font-style:italic; text-transform:uppercase; color:var(--burn); font-size:14px; margin-bottom:7px; }
+.slot-row{ display:flex; gap:8px; overflow-x:auto; touch-action:pan-x; padding-bottom:4px; }
+.part{ flex:0 0 auto; min-width:128px; background:#111318; border:2px solid #34363e; border-radius:12px;
+  padding:10px 12px; text-align:left; color:var(--dust); cursor:pointer; }
+.part .pname{ display:block; font-weight:800; font-size:13px; color:#fff; }
+.part .pprice{ display:block; font-size:12px; font-weight:800; color:var(--plate); margin-top:3px; }
+.part.owned{ border-color:#4a4d58; }
+.part.owned .pprice{ color:#9a9da8; }
+.part.equipped{ border-color:var(--plate); background:#262312; }
+.part.equipped .pprice{ color:var(--grip); }
+#color-wrap{ display:flex; flex-wrap:wrap; gap:10px; }
+.swatch{ width:52px; height:52px; border-radius:12px; border:3px solid #34363e; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; }
+.swatch span{ font-size:10px; font-weight:900; color:#fff; text-shadow:0 1px 2px #000; }
+.swatch.sel{ border-color:#fff; box-shadow:0 0 0 3px var(--plate); }
+.plate-row{ display:flex; align-items:center; gap:14px; margin-top:12px; }
+.plate-preview{ background:var(--plate); color:var(--ink); border-radius:10px; padding:6px 18px;
+  font-weight:900; font-size:26px; font-style:italic; }
+.step-btn{ width:44px; height:44px; border-radius:10px; background:var(--coal2); border:2px solid #3a3d46;
+  color:#fff; font-size:22px; font-weight:900; cursor:pointer; }
+
+/* ---- results ---- */
+#scr-results{ align-items:center; justify-content:center; }
+.res-card{ width:min(560px,94vw); background:var(--coal); border:2px solid #34363e; border-radius:20px;
+  padding:20px 22px; max-height:92vh; overflow-y:auto; touch-action:pan-y; }
+.res-place{ font-size:38px; text-align:center; display:block; margin-bottom:8px; }
+.res-place.p0{ color:var(--plate); } .res-place.p1{ color:#cfd3dc; } .res-place.p2{ color:#d08a4e; } .res-place.p3{ color:#8b8e99; }
+.rrow{ display:flex; justify-content:space-between; padding:7px 2px; border-bottom:1px dashed #34363e; font-size:15px; }
+.rrow b{ color:var(--grip); }
+.res-total-row{ display:flex; justify-content:space-between; align-items:center; margin:12px 0 6px; }
+#res-total{ font-size:26px; font-weight:900; font-style:italic; color:var(--plate); }
+#res-order{ margin:12px 0; }
+.orow{ display:flex; align-items:center; gap:8px; padding:4px 0; font-size:14px; color:#9a9da8; }
+.orow.me{ color:#fff; font-weight:800; }
+.orow i{ width:12px; height:12px; border-radius:4px; display:inline-block; }
+.res-btns{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px; }
+.res-btns .plate-btn{ padding:12px; font-size:15px; }
+.res-btns .ghost-btn{ padding:12px; }
+
+/* ---- race HUD ---- */
+#hud{ position:fixed; inset:0; display:none; pointer-events:none; z-index:30; }
+#hud.show{ display:block; }
+.hud-top{ position:absolute; top:calc(8px + env(safe-area-inset-top)); left:0; right:0;
+  display:flex; justify-content:center; gap:10px; }
+.chip{ background:rgba(20,21,26,0.82); border:2px solid #3a3d46; border-radius:12px;
+  padding:6px 13px; font-weight:900; font-style:italic; font-size:16px; color:#fff; }
+#hud-pos{ background:var(--plate); color:var(--ink); border-color:#a8890f; min-width:56px; text-align:center; }
+#hud-cash{ color:var(--grip); }
+#hud-style{ color:var(--nitro); font-size:13px; align-self:center; }
+#btn-pause{ position:absolute; top:calc(8px + env(safe-area-inset-top)); right:calc(10px + env(safe-area-inset-right));
+  pointer-events:auto; width:44px; height:44px; border-radius:12px; background:rgba(20,21,26,0.82);
+  border:2px solid #3a3d46; color:#fff; font-size:17px; cursor:pointer; }
+#count{ position:absolute; top:34%; left:0; right:0; text-align:center; font-size:110px; font-weight:900;
+  font-style:italic; color:var(--plate); text-shadow:0 5px 0 #a8890f, 0 10px 24px rgba(0,0,0,.5); display:none; }
+#count.go{ color:var(--grip); text-shadow:0 5px 0 #2c7a24, 0 10px 24px rgba(0,0,0,.5); }
+#nitro-pips{ position:absolute; right:calc(28px + env(safe-area-inset-right)); bottom:calc(212px + env(safe-area-inset-bottom));
+  display:flex; gap:6px; justify-content:center; width:96px; }
+#nitro-pips i{ width:14px; height:20px; border-radius:4px; background:#2a2d35; border:1px solid #3a3d46; }
+#nitro-pips i.on{ background:var(--nitro); border-color:#8fdcff; box-shadow:0 0 8px rgba(95,201,255,.6); }
+
+/* ---- touch controls ---- */
+#controls{ position:fixed; inset:0; display:none; z-index:25; }
+#controls.show{ display:block; }
+#joy-zone{ position:absolute; left:0; top:0; bottom:0; width:46%; }
+#joy-base{ display:none; position:fixed; width:140px; height:140px; border-radius:50%;
+  background:rgba(30,32,38,0.55); border:2px solid rgba(120,124,138,0.5); pointer-events:none; }
+#joy-stick{ position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px;
+  border-radius:50%; background:var(--plate); box-shadow:0 3px 0 #a8890f, inset 0 -4px 0 rgba(0,0,0,.15); }
+#joy-stick::after{ content:'◄ ►'; position:absolute; inset:0; display:flex; align-items:center;
+  justify-content:center; font-weight:900; color:var(--ink); font-size:14px; letter-spacing:2px; }
+#joy-hint{ position:absolute; left:24px; bottom:calc(40px + env(safe-area-inset-bottom));
+  color:rgba(200,203,214,0.5); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; pointer-events:none; }
+.ctl-btn{ position:absolute; border-radius:50%; border:none; font-weight:900; font-style:italic;
+  text-transform:uppercase; cursor:pointer; touch-action:none; }
+.ctl-btn.pressed{ filter:brightness(1.25); transform:scale(0.94); }
+#btn-gas{ right:calc(20px + env(safe-area-inset-right)); bottom:calc(24px + env(safe-area-inset-bottom));
+  width:118px; height:118px; background:radial-gradient(circle at 35% 30%, #ffe27a, var(--plate) 60%);
+  color:var(--ink); font-size:22px; box-shadow:0 6px 0 #a8890f; }
+#btn-brake{ right:calc(154px + env(safe-area-inset-right)); bottom:calc(24px + env(safe-area-inset-bottom));
+  width:84px; height:84px; background:radial-gradient(circle at 35% 30%, #ff8a76, #e23b2e 60%);
+  color:#fff; font-size:15px; box-shadow:0 5px 0 #8f221a; }
+#btn-nitro{ right:calc(34px + env(safe-area-inset-right)); bottom:calc(158px + env(safe-area-inset-bottom));
+  width:88px; height:88px; background:radial-gradient(circle at 35% 30%, #a5e2ff, var(--nitro) 60%);
+  color:var(--ink); font-size:15px; box-shadow:0 5px 0 #2b7ea6; }
+
+/* ---- pause overlay ---- */
+#pause-ov{ position:fixed; inset:0; display:none; z-index:40; background:rgba(12,13,16,0.78);
+  align-items:center; justify-content:center; }
+#pause-ov.show{ display:flex; }
+.pause-card{ display:flex; flex-direction:column; gap:12px; width:min(300px,80vw); text-align:center; }
+.pause-card h2{ color:#fff; font-size:30px; margin-bottom:6px; }
+
+/* ---- rotate overlay ---- */
+#rotate-ov{ position:fixed; inset:0; z-index:100; display:none; align-items:center; justify-content:center;
+  flex-direction:column; gap:16px; background:var(--ink); text-align:center; padding:30px; }
+#rotate-ov .phone{ width:52px; height:88px; border:4px solid var(--plate); border-radius:12px;
+  animation:rot 1.6s ease-in-out infinite; }
+@keyframes rot{ 0%,20%{ transform:rotate(0) } 60%,100%{ transform:rotate(90deg) } }
+#rotate-ov h2{ color:#fff; font-size:24px; }
+#rotate-ov p{ color:#9a9da8; font-size:14px; }
+@media (orientation:portrait){ #rotate-ov{ display:flex; } }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<!-- MENU -->
+<div class="screen" id="scr-menu">
+  <div class="menu-tools">
+    <button class="icon-btn" id="btn-mute">🔊</button>
+    <button class="icon-btn" id="btn-fs">⛶</button>
+  </div>
+  <div class="logo-kick banner">SKYWOLF STUDIOS PRESENTS</div>
+  <h1 class="logo banner">PIT BIKE<br><b>RALLY</b></h1>
+  <div class="logo-sub">4 riders · 1 screen · dirt everywhere</div>
+  <div class="menu-btns">
+    <button class="plate-btn" id="btn-race">RACE ▸</button>
+    <button class="ghost-btn" id="btn-garage">GARAGE &amp; PARTS SHOP</button>
+  </div>
+  <div class="menu-foot">
+    <span class="wallet-chip" id="menu-wallet">0 ⚙</span>
+    <div id="menu-stats" style="margin-top:10px;"></div>
+    <div style="margin-top:8px; font-size:11px; color:#5c5f6a;">Prototype build — progress lasts this session</div>
+  </div>
+</div>
+
+<!-- TRACK SELECT -->
+<div class="screen" id="scr-tracks">
+  <div class="scr-head">
+    <button class="ghost-btn" id="tracks-back">◂ Back</button>
+    <h2 class="banner">Pick your track</h2>
+    <span class="wallet-chip" id="tracks-wallet">0 ⚙</span>
+  </div>
+  <div class="scr-body"><div id="track-list"></div></div>
+</div>
+
+<!-- GARAGE -->
+<div class="screen" id="scr-garage">
+  <div class="scr-head">
+    <button class="ghost-btn" id="garage-back">◂ Back</button>
+    <h2 class="banner">Garage</h2>
+    <span class="wallet-chip" id="garage-wallet">0 ⚙</span>
+  </div>
+  <div class="scr-body">
+    <div class="garage-grid">
+      <div>
+        <div class="gcard" style="margin-bottom:14px;">
+          <h3>Bike stats</h3>
+          <div class="stat"><span>Top speed</span><div class="bar"><i id="st-top"></i></div></div>
+          <div class="stat"><span>Accel</span><div class="bar"><i id="st-acc"></i></div></div>
+          <div class="stat"><span>Handling</span><div class="bar"><i id="st-han"></i></div></div>
+          <div class="stat"><span>Landing</span><div class="bar"><i id="st-jmp"></i></div></div>
+          <div class="stat"><span>Nitro</span><div class="bar"><i id="st-nit"></i></div></div>
+        </div>
+        <div class="gcard">
+          <h3>Paint &amp; plate</h3>
+          <div id="color-wrap"></div>
+          <div class="plate-row">
+            <button class="step-btn" id="plate-dn">−</button>
+            <div class="plate-preview" id="plate-num">7</div>
+            <button class="step-btn" id="plate-up">+</button>
+          </div>
+        </div>
+      </div>
+      <div class="gcard">
+        <h3>Parts shop — tap to buy &amp; equip</h3>
+        <div id="parts-wrap"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RACE (screen holder; canvas + HUD do the work) -->
+<div class="screen" id="scr-race" style="background:transparent; pointer-events:none;"></div>
+
+<!-- RESULTS -->
+<div class="screen" id="scr-results">
+  <div class="res-card">
+    <span class="res-place banner" id="res-place">1st PLACE!</span>
+    <div id="res-rows"></div>
+    <div class="res-total-row">
+      <span style="font-weight:900; font-style:italic; text-transform:uppercase;">Race total</span>
+      <span id="res-total">+0 ⚙</span>
+    </div>
+    <div class="res-total-row" style="margin:0 0 4px;">
+      <span style="color:#9a9da8; font-size:13px;">Wallet</span>
+      <span class="wallet-chip" id="res-wallet">0 ⚙</span>
+    </div>
+    <div id="res-order"></div>
+    <div class="res-btns">
+      <button class="plate-btn" id="res-again">RACE AGAIN</button>
+      <button class="plate-btn" id="res-next">NEXT TRACK</button>
+      <button class="ghost-btn" id="res-garage">GARAGE</button>
+      <button class="ghost-btn" id="res-menu">MENU</button>
+    </div>
+  </div>
+</div>
+
+<!-- HUD -->
+<div id="hud">
+  <div class="hud-top">
+    <span class="chip" id="hud-pos">1st</span>
+    <span class="chip" id="hud-lap">LAP 1/3</span>
+    <span class="chip" id="hud-time">0:00.0</span>
+    <span class="chip" id="hud-cash">+0⚙</span>
+    <span class="chip" id="hud-style" style="border:none; background:transparent;">0 STYLE</span>
+  </div>
+  <button id="btn-pause">II</button>
+  <div id="count">3</div>
+  <div id="nitro-pips"></div>
+</div>
+
+<!-- TOUCH CONTROLS -->
+<div id="controls">
+  <div id="joy-zone"></div>
+  <div id="joy-base"><div id="joy-stick"></div></div>
+  <div id="joy-hint">◂ Touch &amp; slide to steer ▸</div>
+  <button class="ctl-btn" id="btn-nitro">NITRO</button>
+  <button class="ctl-btn" id="btn-brake">BRAKE</button>
+  <button class="ctl-btn" id="btn-gas">GAS</button>
+</div>
+
+<!-- PAUSE -->
+<div id="pause-ov">
+  <div class="pause-card">
+    <h2 class="banner">Paused</h2>
+    <button class="plate-btn" id="pause-resume">RESUME</button>
+    <button class="ghost-btn" id="pause-restart">RESTART RACE</button>
+    <button class="ghost-btn" id="pause-quit">QUIT TO MENU</button>
+  </div>
+</div>
+
+<!-- ROTATE -->
+<div id="rotate-ov">
+  <div class="phone"></div>
+  <h2 class="banner">Rotate to landscape</h2>
+  <p>Pit Bike Rally races sideways — turn your phone to ride.</p>
+</div>
+
+<script>
+'use strict';
+/* ============================================================
+   PIT BIKE RALLY — Skywolf Studios prototype
+   Top-down single-screen pit bike racing.
+   Touch: left virtual stick steers, right buttons gas/brake/nitro.
+   ============================================================ */
+
+/* ---------------- DATA: economy & parts ---------------- */
+const ECON = {
+  place: [1500, 1000, 600, 300],
+  bestLap: 250,
+  styleRate: 2,      // sprockets per style point
+  styleCap: 500,
+  pickupCash: [100, 300],
+};
+
+const PARTS = [
+  // slot, id, name, tier, price, stats
+  { slot:'engine', id:'eng0', name:'Stock 50cc',    tier:0, price:0,    top:0,   accel:0   },
+  { slot:'engine', id:'eng1', name:'88cc Kit',      tier:1, price:1200, top:40,  accel:35  },
+  { slot:'engine', id:'eng2', name:'125 Big Bore',  tier:2, price:3000, top:85,  accel:70  },
+  { slot:'engine', id:'eng3', name:'190 Race Motor',tier:3, price:6500, top:140, accel:115 },
+
+  { slot:'tires',  id:'tir0', name:'Stock Knobby',  tier:0, price:0,    steer:0,    grip:0    },
+  { slot:'tires',  id:'tir1', name:'Soft Compound', tier:1, price:800,  steer:0.25, grip:0.06 },
+  { slot:'tires',  id:'tir2', name:'Paddle Pro',    tier:2, price:2000, steer:0.5,  grip:0.14 },
+  { slot:'tires',  id:'tir3', name:'Race Hybrid',   tier:3, price:4500, steer:0.85, grip:0.22 },
+
+  { slot:'susp',   id:'sus0', name:'Stock Forks',   tier:0, price:0,    land:0    },
+  { slot:'susp',   id:'sus1', name:'Sport Setup',   tier:1, price:900,  land:0.35 },
+  { slot:'susp',   id:'sus2', name:'Race Setup',    tier:2, price:2400, land:0.65 },
+  { slot:'susp',   id:'sus3', name:'Factory Works', tier:3, price:5200, land:1.0  },
+
+  { slot:'nitro',  id:'nit0', name:'Single Bottle', tier:0, price:0,    charges:1 },
+  { slot:'nitro',  id:'nit1', name:'Twin Bottles',  tier:1, price:1000, charges:2 },
+  { slot:'nitro',  id:'nit2', name:'Race Rack',     tier:2, price:2600, charges:3 },
+  { slot:'nitro',  id:'nit3', name:'Ironman Rack',  tier:3, price:5500, charges:4 },
+
+  { slot:'gears',  id:'grs0', name:'Balanced Gearing', tier:0, price:0,    top:0,   accel:0  },
+  { slot:'gears',  id:'grs1', name:'Short Gearing',    tier:1, price:700,  top:-20, accel:45 },
+  { slot:'gears',  id:'grs2', name:'Tall Gearing',     tier:2, price:700,  top:45,  accel:-20},
+  { slot:'gears',  id:'grs3', name:'Close-Ratio Race', tier:3, price:1800, top:25,  accel:25 },
+];
+const SLOT_LABEL = { engine:'Engine', tires:'Tires', susp:'Suspension', nitro:'Nitro tank', gears:'Gearing' };
+const SLOTS = ['engine','tires','susp','nitro','gears'];
+
+const COLORS = [
+  { id:'red',    name:'Rally Red',    hex:'#e23b2e', price:0 },
+  { id:'blue',   name:'Race Blue',    hex:'#2f6fe4', price:0 },
+  { id:'green',  name:'Pit Green',    hex:'#2fa14b', price:0 },
+  { id:'yellow', name:'Plate Yellow', hex:'#f2c928', price:400 },
+  { id:'orange', name:'Burn Orange',  hex:'#f07020', price:400 },
+  { id:'purple', name:'Grape Haze',   hex:'#8a4fd8', price:600 },
+  { id:'white',  name:'Factory White',hex:'#eeeeee', price:800 },
+  { id:'black',  name:'Night Black',  hex:'#23252a', price:800 },
+  { id:'mint',   name:'Wolf Mint',    hex:'#4fd8b8', price:1500 },
+];
+
+/* ---------------- DATA: tracks ---------------- */
+/* pts are authored control points in a 1600x900 world; smoothed at build time.
+   zones: {a,b,type} as fractions of lap. pickups: {t,side,type}. */
+const TRACKS = [
+  { name:'Rookie Oval', laps:3, width:118, purse:1.0, ai:0.78,
+    theme:{ g1:'#4d8f43', g2:'#478540', dirt:'#a97648', edge:'#6b4a2c', rut:'#96683e' },
+    pts:[[210,270],[800,190],[1340,255],[1460,455],[1350,660],[800,725],[250,660],[145,455]],
+    zones:[{a:0.13,b:0.16,type:'ramp'},{a:0.62,b:0.65,type:'ramp'}],
+    pickups:[{t:0.30,side:0.4,type:'cash'},{t:0.50,side:-0.3,type:'nitro'},{t:0.83,side:0.2,type:'cash'}] },
+
+  { name:'Hairpin Gulch', laps:3, width:96, purse:1.2, ai:0.81,
+    theme:{ g1:'#c9a25f', g2:'#c19a57', dirt:'#8e5f33', edge:'#5e3d20', rut:'#7c5029' },
+    pts:[[175,205],[1340,185],[1450,300],[1345,405],[490,405],[400,472],[490,545],[1345,545],[1455,655],[1345,765],[225,772],[138,640],[148,305]],
+    zones:[{a:0.34,b:0.39,type:'mud'},{a:0.56,b:0.585,type:'ramp'}],
+    pickups:[{t:0.22,side:0,type:'cash'},{t:0.47,side:0.3,type:'cash'},{t:0.71,side:-0.3,type:'nitro'}] },
+
+  { name:'Peanut Flats', laps:4, width:106, purse:1.3, ai:0.83,
+    theme:{ g1:'#5b8f3f', g2:'#54873b', dirt:'#b08050', edge:'#6e4e2d', rut:'#9c7044' },
+    pts:[[350,240],[700,300],[1050,215],[1350,290],[1430,520],[1150,700],[800,605],[450,710],[180,530],[220,330]],
+    zones:[{a:0.10,b:0.128,type:'ramp'},{a:0.52,b:0.548,type:'ramp'},{a:0.78,b:0.82,type:'mud'}],
+    pickups:[{t:0.28,side:0.35,type:'cash'},{t:0.44,side:0,type:'nitro'},{t:0.66,side:-0.35,type:'cash'},{t:0.92,side:0.3,type:'cash'}] },
+
+  { name:'Snake Canyon', laps:3, width:86, purse:1.5, ai:0.85,
+    theme:{ g1:'#b56a4a', g2:'#ab6245', dirt:'#c99a63', edge:'#7a4c2c', rut:'#b0824e' },
+    pts:[[175,172],[1370,172],[1458,262],[1370,355],[360,355],[268,447],[360,540],[1370,540],[1458,648],[1370,758],[205,758],[122,560],[122,300]],
+    zones:[{a:0.155,b:0.18,type:'ramp'},{a:0.40,b:0.45,type:'mud'},{a:0.63,b:0.655,type:'ramp'}],
+    pickups:[{t:0.10,side:0,type:'cash'},{t:0.35,side:0.3,type:'cash'},{t:0.58,side:-0.3,type:'nitro'},{t:0.86,side:0,type:'cash'}] },
+
+  { name:'Stadium GP', laps:4, width:100, purse:1.7, ai:0.87,
+    theme:{ g1:'#3c4551', g2:'#37404b', dirt:'#8d6a45', edge:'#4a3823', rut:'#7a5a39' },
+    pts:[[255,205],[700,160],[765,262],[900,262],[962,162],[1350,205],[1450,432],[1300,690],[905,642],[822,722],[600,722],[522,632],[255,682],[150,442]],
+    zones:[{a:0.06,b:0.085,type:'ramp'},{a:0.33,b:0.355,type:'ramp'},{a:0.60,b:0.625,type:'ramp'},{a:0.82,b:0.85,type:'mud'}],
+    pickups:[{t:0.18,side:0.3,type:'cash'},{t:0.42,side:-0.3,type:'cash'},{t:0.55,side:0,type:'nitro'},{t:0.90,side:0.3,type:'cash'}] },
+
+  { name:'Mud Bowl', laps:4, width:112, purse:1.8, ai:0.885,
+    theme:{ g1:'#54683b', g2:'#4d6036', dirt:'#7c6242', edge:'#443423', rut:'#6a5236' },
+    pts:[[300,232],[900,172],[1330,262],[1440,502],[1250,700],[850,732],[762,562],[560,732],[230,652],[152,402]],
+    zones:[{a:0.14,b:0.20,type:'mud'},{a:0.44,b:0.505,type:'mud'},{a:0.63,b:0.655,type:'ramp'},{a:0.80,b:0.86,type:'mud'}],
+    pickups:[{t:0.09,side:0,type:'cash'},{t:0.36,side:0.35,type:'nitro'},{t:0.58,side:-0.3,type:'cash'},{t:0.93,side:0,type:'cash'}] },
+
+  { name:'Ridge Runner', laps:4, width:102, purse:2.0, ai:0.90,
+    theme:{ g1:'#8f7a4e', g2:'#867148', dirt:'#b3general', edge:'#6e4e2d', rut:'#9c7044' },
+    pts:[[210,690],[340,262],[800,152],[1300,242],[1450,600],[1415,722],[930,762],[500,758]],
+    zones:[{a:0.10,b:0.125,type:'ramp'},{a:0.30,b:0.325,type:'ramp'},{a:0.52,b:0.545,type:'ramp'},{a:0.74,b:0.765,type:'ramp'}],
+    pickups:[{t:0.2,side:0.3,type:'cash'},{t:0.45,side:-0.3,type:'nitro'},{t:0.65,side:0.3,type:'cash'},{t:0.88,side:0,type:'cash'}] },
+
+  { name:'Ironman Circuit', laps:5, width:90, purse:2.5, ai:0.92,
+    theme:{ g1:'#44554a', g2:'#3e4e44', dirt:'#9a7c52', edge:'#544025', rut:'#87693f' },
+    pts:[[175,225],[600,152],[900,242],[1250,152],[1440,332],[1300,468],[1010,432],[905,558],[1300,600],[1420,720],[1000,788],[600,700],[420,780],[182,650],[240,432]],
+    zones:[{a:0.09,b:0.115,type:'ramp'},{a:0.30,b:0.345,type:'mud'},{a:0.50,b:0.525,type:'ramp'},{a:0.72,b:0.76,type:'mud'},{a:0.86,b:0.885,type:'ramp'}],
+    pickups:[{t:0.16,side:0,type:'cash'},{t:0.40,side:0.3,type:'nitro'},{t:0.62,side:-0.3,type:'cash'},{t:0.80,side:0,type:'cash'},{t:0.95,side:0.3,type:'nitro'}] },
+];
+// fix a typo-proof dirt value for Ridge Runner
+TRACKS[6].theme.dirt = '#b38a58';
+
+const AI_COLORS = ['#e4952f','#7f56c9','#3fb4c9'];
+const AI_NAMES  = ['Dusty','Rico','Mags'];
+
+/* ---------------- STATE (session only in this preview build) ---------------- */
+const G = {
+  wallet: 2500,
+  owned: new Set(['eng0','tir0','sus0','nit0','grs0']),
+  equipped: { engine:'eng0', tires:'tir0', susp:'sus0', nitro:'nit0', gears:'grs0' },
+  ownedColors: new Set(['red','blue','green']),
+  color: 'red',
+  plate: 7,
+  best: {},          // trackIndex -> ms
+  wins: 0, races: 0, earnings: 0,
+  trackIndex: 0,
+  muted: false,
+};
+
+function partById(id){ return PARTS.find(p => p.id === id); }
+function bikeStats(){
+  const e = partById(G.equipped.engine), t = partById(G.equipped.tires),
+        s = partById(G.equipped.susp), n = partById(G.equipped.nitro),
+        g = partById(G.equipped.gears);
+  return {
+    top:   285 + e.top + g.top,                 // px/s
+    accel: 190 + e.accel + g.accel,             // px/s^2
+    steer: 2.55 + t.steer,                      // rad/s
+    grip:  t.grip,                              // off-track/mud mitigation 0..0.22
+    land:  s.land,                              // landing forgiveness 0..1
+    charges: n.charges,
+  };
+}
+function statPct(st){
+  return {
+    top:   (st.top-285)/140, accel:(st.accel-190)/140,
+    steer: (st.steer-2.55)/0.85, land: st.land, nitro:(st.charges-1)/3,
+  };
+}
+
+/* ---------------- MATH & TRACK BUILD ---------------- */
+function catmull(pts, spacing){
+  // closed-loop Catmull-Rom resample to ~spacing px
+  const out = [];
+  const n = pts.length;
+  for (let i=0;i<n;i++){
+    const p0=pts[(i-1+n)%n], p1=pts[i], p2=pts[(i+1)%n], p3=pts[(i+2)%n];
+    const seg = Math.hypot(p2[0]-p1[0], p2[1]-p1[1]);
+    const steps = Math.max(4, Math.round(seg/spacing));
+    for (let j=0;j<steps;j++){
+      const u=j/steps, u2=u*u, u3=u2*u;
+      const x=0.5*((2*p1[0])+(-p0[0]+p2[0])*u+(2*p0[0]-5*p1[0]+4*p2[0]-p3[0])*u2+(-p0[0]+3*p1[0]-3*p2[0]+p3[0])*u3);
+      const y=0.5*((2*p1[1])+(-p0[1]+p2[1])*u+(2*p0[1]-5*p1[1]+4*p2[1]-p3[1])*u2+(-p0[1]+3*p1[1]-3*p2[1]+p3[1])*u3);
+      out.push([x,y]);
+    }
+  }
+  return out;
+}
+
+let track = null;
+function buildTrack(def){
+  const pts = catmull(def.pts, 12);
+  const N = pts.length;
+  const normals = [];
+  for (let i=0;i<N;i++){
+    const a=pts[(i-1+N)%N], b=pts[(i+1)%N];
+    const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1;
+    normals.push([-dy/L, dx/L]);
+  }
+  const frac = i => i/N;
+  const zoneAt = f => {
+    for (const z of def.zones){ if (f>=z.a && f<=z.b) return z.type; }
+    return null;
+  };
+  const pickups = def.pickups.map(pk => {
+    const i = Math.floor(pk.t*N)%N;
+    const nrm = normals[i], off = pk.side*def.width*0.32;
+    return { x:pts[i][0]+nrm[0]*off, y:pts[i][1]+nrm[1]*off, type:pk.type, active:true, timer:0 };
+  });
+  return { def, pts, N, normals, width:def.width, frac, zoneAt, pickups };
+}
+
+function nearestIdx(x, y, hint){
+  // windowed nearest-point search along the loop
+  const N = track.N;
+  let best=-1, bd=Infinity;
+  const scan = (i)=>{ const p=track.pts[(i+N)%N]; const d=(p[0]-x)**2+(p[1]-y)**2; if(d<bd){bd=d;best=(i+N)%N;} };
+  if (hint == null){ for(let i=0;i<N;i+=2) scan(i); }
+  else { for(let i=hint-70;i<=hint+70;i++) scan(i); }
+  return { idx:best, dist:Math.sqrt(bd) };
+}
+
+/* ---------------- BIKES ---------------- */
+function makeBike(opts){
+  return Object.assign({
+    x:0, y:0, heading:0, speed:0, z:0, vz:0,
+    steer:0, throttle:0, brake:0,
+    lap:0, idx:0, finished:false, finishTime:0,
+    nitro:0, nitroT:0, cash:0, style:0, air:0,
+    lapStart:0, bestLap:Infinity,
+    isAI:false, skill:1, look:26, name:'You', color:'#e23b2e', plate:7,
+    lastRampF:-1,
+  }, opts);
+}
+
+let bikes = [];
+const race = {
+  active:false, started:false, over:false,
+  t:0, countdown:0, laps:3, popups:[], finishOrder:[],
+  pauseAfter:0,
+};
+
+function startRace(ti){
+  G.trackIndex = ti;
+  track = buildTrack(TRACKS[ti]);
+  race.laps = TRACKS[ti].laps;
+  race.t = 0; race.countdown = 3.2; race.started=false; race.over=false; race.active=true;
+  race.popups = []; race.finishOrder = []; race.pauseAfter = 0;
+  for (const p of track.pickups){ p.active=true; p.timer=0; }
+
+  const st = bikeStats();
+  bikes = [];
+  // grid: 2x2 behind start line
+  const N = track.N;
+  for (let k=0;k<4;k++){
+    const back = 30 + Math.floor(k/2)*22;
+    const i = (N - back) % N;
+    const nrm = track.normals[i];
+    const lat = (k%2===0? -1:1) * track.width*0.22;
+    const p = track.pts[i];
+    const q = track.pts[(i+6)%N];
+    const bike = makeBike({
+      x: p[0]+nrm[0]*lat, y: p[1]+nrm[1]*lat,
+      heading: Math.atan2(q[1]-p[1], q[0]-p[0]),
+      idx: i, lap: 0,
+    });
+    bike.idx = i;
+    if (k===0){
+      bike.isAI=false; bike.name='You';
+      bike.color = COLORS.find(c=>c.id===G.color).hex; bike.plate=G.plate;
+      bike.stats = st; bike.nitro = st.charges;
+    } else {
+      const j=k-1;
+      const base = TRACKS[ti].ai;
+      const skill = base + j*0.035 + Math.random()*0.02;
+      const aiUp = Math.min(1, ti/7);
+      bike.isAI=true; bike.skill=skill; bike.name=AI_NAMES[j]; bike.color=AI_COLORS[j]; bike.plate=[11,23,42][j];
+      bike.stats = {
+        top: 285 + 120*aiUp*skill, accel: 190 + 100*aiUp*skill,
+        steer: 2.55 + 0.7*aiUp, grip: 0.15*aiUp, land: 0.6, charges: 1+Math.round(2*aiUp),
+      };
+      bike.nitro = bike.stats.charges;
+    }
+    // since grid sits just BEFORE the line, first crossing bumps lap 0 -> 1; laps completed = lap; need laps = def.laps crossings +? We'll treat lap counter starting at 0, crossing start increments; finish when lap > race.laps
+    bikes.push(bike);
+  }
+  prerenderTrack();
+  setScreen('race');
+  hudInit();
+  audioRace(true);
+}
+
+/* ---------------- PHYSICS ---------------- */
+function updateBike(b, dt){
+  if (b.finished) { b.throttle = 0.4; } // cruise after finish
+  const st = b.stats;
+  const zone = track.zoneAt(track.frac(b.idx));
+  const near = nearestIdx(b.x, b.y, b.idx);
+  const off = near.dist > track.width/2;
+
+  // target speed
+  let top = st.top, accel = st.accel;
+  if (b.nitroT > 0){ top *= 1.55; accel *= 1.7; b.nitroT -= dt; }
+  let envMul = 1;
+  if (b.z <= 0){
+    if (off)              envMul = 0.50 + st.grip*1.1;
+    else if (zone==='mud')envMul = 0.60 + st.grip*1.2;
+  }
+  const target = b.throttle * top * envMul;
+
+  if (b.speed < target) b.speed = Math.min(target, b.speed + accel*(b.z>0?0.25:1)*dt);
+  else b.speed = Math.max(target, b.speed - (off? 330: 240)*dt);
+  if (b.brake > 0 && b.z<=0) b.speed = Math.max(0, b.speed - 520*b.brake*dt);
+  if (b.throttle===0 && b.brake===0) b.speed = Math.max(0, b.speed - 140*dt);
+
+  // steering (reduced in air, scaled with speed)
+  const spdF = Math.min(1, b.speed/140 + 0.15) * (0.6 + 0.4*Math.min(1, 320/Math.max(80,b.speed)));
+  const airF = b.z>0 ? 0.25 : 1;
+  b.heading += b.steer * st.steer * spdF * airF * dt;
+
+  // ramps
+  if (b.z<=0 && zone==='ramp' && b.speed>140){
+    const f = track.frac(b.idx);
+    if (Math.abs(f - b.lastRampF) > 0.03){
+      b.lastRampF = f;
+      b.vz = Math.min(430, b.speed*0.95);
+      b.z = 0.01;
+      b.air = 0;
+    }
+  }
+  if (b.z > 0){
+    b.vz -= 1150*dt; b.z += b.vz*dt; b.air += dt;
+    if (b.z <= 0){
+      b.z = 0; 
+      const hard = b.vz < -330 && st.land < 0.6;
+      if (hard) b.speed *= (0.55 + st.land*0.35);
+      if (!b.isAI){
+        const pts = Math.round(b.air*22 + (hard?0:12));
+        b.style += pts;
+        popup(b.x, b.y-30, (hard?'ROUGH ':'CLEAN +')+pts, hard?'#ff8866':'#ffd23f');
+      }
+      b.vz = 0;
+    }
+  }
+
+  // integrate
+  b.x += Math.cos(b.heading)*b.speed*dt;
+  b.y += Math.sin(b.heading)*b.speed*dt;
+  b.x = Math.max(10, Math.min(1590, b.x));
+  b.y = Math.max(10, Math.min(890, b.y));
+
+  // progress & laps
+  const prevIdx = b.idx;
+  b.idx = near.idx;
+  const N = track.N;
+  if (prevIdx > N-70 && b.idx < 70 && !b.finished){
+    b.lap++;
+    if (!b.isAI){
+      const lapT = race.t - b.lapStart;
+      if (b.lap>=2 && lapT < b.bestLap) b.bestLap = lapT;
+      b.lapStart = race.t;
+    }
+    if (b.lap > race.laps){
+      b.finished = true; b.finishTime = race.t;
+      race.finishOrder.push(b);
+      if (b === bikes[0]){ race.over = true; race.pauseAfter = 1.6; }
+    }
+  } else if (prevIdx < 70 && b.idx > N-70){
+    b.lap = Math.max(0, b.lap-1); // crossed backwards
+  }
+
+  // pickups (player + AI can take nitro; only player takes cash)
+  if (b.z<=0){
+    for (const p of track.pickups){
+      if (!p.active){ continue; }
+      const d = (p.x-b.x)**2 + (p.y-b.y)**2;
+      if (d < 26*26){
+        if (p.type==='cash'){
+          if (!b.isAI){
+            const amt = ECON.pickupCash[0] + Math.floor(Math.random()*(ECON.pickupCash[1]-ECON.pickupCash[0]));
+            b.cash += amt; popup(p.x,p.y,'+'+amt+'⚙','#8ef07f');
+            p.active=false; p.timer=9;
+          }
+        } else {
+          b.nitro = Math.min(4, b.nitro+1);
+          if (!b.isAI) popup(p.x,p.y,'+NITRO','#5fc9ff');
+          p.active=false; p.timer=9;
+        }
+      }
+    }
+  }
+}
+
+function updateAI(b, dt){
+  const N = track.N;
+  const look = Math.round(9 + b.speed*0.035);
+  const ti = (b.idx + look) % N;
+  const tp = track.pts[ti];
+  let want = Math.atan2(tp[1]-b.y, tp[0]-b.x);
+  let dh = want - b.heading;
+  while (dh > Math.PI) dh -= 2*Math.PI;
+  while (dh < -Math.PI) dh += 2*Math.PI;
+  b.steer = Math.max(-1, Math.min(1, dh*2.1));
+
+  // corner-aware throttle: measure curvature ahead
+  const ahead = (b.idx + Math.round(24 + b.speed*0.08)) % N;
+  const a1 = track.pts[b.idx], a2 = track.pts[(b.idx+16)%N], a3 = track.pts[ahead];
+  const h1 = Math.atan2(a2[1]-a1[1], a2[0]-a1[0]);
+  const h2 = Math.atan2(a3[1]-a2[1], a3[0]-a2[0]);
+  let turn = Math.abs(h2-h1); if (turn>Math.PI) turn = 2*Math.PI-turn;
+  const cornerMul = Math.max(0.55, 1 - turn*0.6);
+  // mild rubber-band vs player
+  const player = bikes[0];
+  const gap = ((player.lap*N+player.idx) - (b.lap*N+b.idx))/N;
+  const rb = Math.max(0.96, Math.min(1.04, 1 + gap*0.04));
+  b.throttle = Math.min(1, b.skill * cornerMul * rb + 0.06);
+  b.brake = (turn > 1.3 && b.speed > 270) ? 0.6 : 0;
+
+  if (b.nitro>0 && b.nitroT<=0 && turn<0.18 && Math.random()<0.006){ b.nitro--; b.nitroT=1.5; }
+}
+
+function bikeCollisions(){
+  for (let i=0;i<bikes.length;i++) for (let j=i+1;j<bikes.length;j++){
+    const a=bikes[i], c=bikes[j];
+    if (a.z>0 || c.z>0) continue;
+    const dx=c.x-a.x, dy=c.y-a.y, d=Math.hypot(dx,dy);
+    if (d>0 && d<26){
+      const push=(26-d)/2, ux=dx/d, uy=dy/d;
+      a.x-=ux*push; a.y-=uy*push; c.x+=ux*push; c.y+=uy*push;
+      a.speed*=0.97; c.speed*=0.97;
+    }
+  }
+}
+
+function racePositions(){
+  const N = track.N;
+  return bikes.slice().sort((a,b)=>{
+    if (a.finished && b.finished) return a.finishTime-b.finishTime;
+    if (a.finished) return -1; if (b.finished) return 1;
+    return (b.lap*N+b.idx)-(a.lap*N+a.idx);
+  });
+}
+
+function popup(x,y,text,color){ race.popups.push({x,y,text,color,ttl:1.1}); }
+
+/* ---------------- RACE LOOP ---------------- */
+let paused=false;
+function updateRace(dt){
+  if (paused) return;
+  if (race.countdown > 0){
+    race.countdown -= dt;
+    const c = Math.ceil(race.countdown);
+    const el = document.getElementById('count');
+    if (race.countdown <= 0){ race.started=true; el.textContent='GO!'; el.classList.add('go');
+      setTimeout(()=>{ el.style.display='none'; }, 700);
+    } else { el.textContent = c; el.style.display='block'; el.classList.remove('go'); }
+    return;
+  }
+  race.t += dt;
+
+  for (const b of bikes){ if (b.isAI) updateAI(b, dt); }
+  for (const b of bikes) updateBike(b, dt);
+  bikeCollisions();
+
+  for (const p of track.pickups){ if (!p.active){ p.timer-=dt; if (p.timer<=0) p.active=true; } }
+  for (let i=race.popups.length-1;i>=0;i--){ const p=race.popups[i]; p.ttl-=dt; p.y-=28*dt; if(p.ttl<=0) race.popups.splice(i,1); }
+
+  if (race.over){
+    race.pauseAfter -= dt;
+    if (race.pauseAfter <= 0){ finishRace(); }
+  }
+  hudUpdate();
+  audioTick();
+}
+
+function finishRace(){
+  race.active=false;
+  audioRace(false);
+  const order = racePositions();
+  const place = order.indexOf(bikes[0]);
+  const purse = TRACKS[G.trackIndex].purse;
+  const p = bikes[0];
+  const basePay = Math.round(ECON.place[place]*purse);
+  const stylePay = Math.min(ECON.styleCap, p.style*ECON.styleRate);
+  // best lap of race?
+  let bestLapBonus = 0;
+  if (p.bestLap < Infinity){
+    bestLapBonus = ECON.bestLap; // prototype: award if you set a clean best lap
+  }
+  const total = basePay + stylePay + p.cash + bestLapBonus;
+  G.wallet += total; G.earnings += total; G.races++;
+  if (place===0) G.wins++;
+  const ms = Math.round(p.finishTime*1000) || Math.round(race.t*1000);
+  if (p.finished && (!G.best[G.trackIndex] || ms < G.best[G.trackIndex])) G.best[G.trackIndex]=ms;
+
+  showResults({ place, order, basePay, stylePay, cash:p.cash, bestLapBonus, total });
+}
+
+/* ---------------- RENDER ---------------- */
+const canvas = document.getElementById('game');
+const ctx = canvas.getContext('2d');
+let trackCanvas=null;
+const W=1600, H=900;
+let view={s:1,ox:0,oy:0};
+
+function resize(){
+  const dpr = Math.min(2, window.devicePixelRatio||1);
+  canvas.width = Math.floor(innerWidth*dpr);
+  canvas.height = Math.floor(innerHeight*dpr);
+  canvas.style.width = innerWidth+'px';
+  canvas.style.height = innerHeight+'px';
+  const s = Math.min(canvas.width/W, canvas.height/H);
+  view = { s, ox:(canvas.width - W*s)/2, oy:(canvas.height - H*s)/2 };
+}
+window.addEventListener('resize', resize);
+
+function prerenderTrack(){
+  trackCanvas = document.createElement('canvas');
+  trackCanvas.width=W; trackCanvas.height=H;
+  const c = trackCanvas.getContext('2d');
+  const th = track.def.theme;
+  // checker grass
+  for (let y=0;y<H;y+=90) for (let x=0;x<W;x+=90){
+    c.fillStyle = ((x+y)/90)%2===0 ? th.g1 : th.g2;
+    c.fillRect(x,y,90,90);
+  }
+  const path = new Path2D();
+  path.moveTo(track.pts[0][0], track.pts[0][1]);
+  for (let i=1;i<track.N;i++) path.lineTo(track.pts[i][0], track.pts[i][1]);
+  path.closePath();
+  c.lineJoin='round'; c.lineCap='round';
+  c.strokeStyle=th.edge; c.lineWidth=track.width+18; c.stroke(path);
+  c.strokeStyle=th.dirt; c.lineWidth=track.width; c.stroke(path);
+  c.strokeStyle=th.rut; c.lineWidth=track.width*0.42; c.setLineDash([26,34]); c.stroke(path); c.setLineDash([]);
+
+  // zones
+  for (const z of track.def.zones){
+    const i0=Math.floor(z.a*track.N), i1=Math.floor(z.b*track.N);
+    if (z.type==='mud'){
+      const zp=new Path2D();
+      zp.moveTo(track.pts[i0][0], track.pts[i0][1]);
+      for(let i=i0;i<=i1;i++){ const p=track.pts[i%track.N]; zp.lineTo(p[0],p[1]); }
+      c.strokeStyle='#3f2f1d'; c.lineWidth=track.width*0.94; c.stroke(zp);
+      c.strokeStyle='#4e3a24'; c.lineWidth=track.width*0.6; c.setLineDash([10,14]); c.stroke(zp); c.setLineDash([]);
+    } else if (z.type==='ramp'){
+      const mid=Math.floor((i0+i1)/2)%track.N;
+      const p=track.pts[mid], n=track.normals[mid];
+      c.save(); c.translate(p[0],p[1]); c.rotate(Math.atan2(n[1],n[0]));
+      const hw=track.width*0.46;
+      c.fillStyle='#c9c2b4'; c.fillRect(-hw,-13,hw*2,26);
+      c.fillStyle='#d84a3a';
+      for(let s=-hw;s<hw;s+=22) c.fillRect(s,-13,11,26);
+      c.fillStyle='#fff'; c.font='bold 15px sans-serif'; c.textAlign='center'; c.fillText('▲▲', 0, -18);
+      c.restore();
+    }
+  }
+  // start/finish
+  const p0=track.pts[0], n0=track.normals[0];
+  c.save(); c.translate(p0[0],p0[1]); c.rotate(Math.atan2(n0[1],n0[0]));
+  const hw=track.width/2;
+  for(let s=0;s<2;s++) for(let q=-hw;q<hw;q+=16){
+    c.fillStyle = ((q/16|0)+s)%2===0 ? '#ffffff':'#17181c';
+    c.fillRect(q, -12+s*12, 16, 12);
+  }
+  c.restore();
+}
+
+// roundRect polyfill for older webviews
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect){
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r){
+    r = Math.min(r, w/2, h/2);
+    this.moveTo(x+r,y); this.arcTo(x+w,y,x+w,y+h,r); this.arcTo(x+w,y+h,x,y+h,r);
+    this.arcTo(x,y+h,x,y,r); this.arcTo(x,y,x+w,y,r); this.closePath();
+  };
+}
+function shade(hex, f){
+  const n=parseInt(hex.slice(1),16), r=(n>>16)&255, g=(n>>8)&255, b2=n&255;
+  const m=v=>Math.max(0,Math.min(255,Math.round(v*f)));
+  return 'rgb('+m(r)+','+m(g)+','+m(b2)+')';
+}
+function drawBike(c, b){
+  // ground shadow
+  c.save();
+  c.translate(b.x, b.y);
+  c.globalAlpha = 0.30;
+  c.fillStyle='#000';
+  c.beginPath(); c.ellipse(2, 5+b.z*0.14, 13+b.z*0.06, 7.5+b.z*0.03, 0, 0, Math.PI*2); c.fill();
+  c.restore();
+
+  const col=b.color, dark=shade(col,0.62), lite=shade(col,1.3);
+  c.save();
+  c.translate(b.x, b.y - b.z*0.5);
+  const airWob = b.z>0 ? Math.sin(race.t*20)*0.05 : 0;
+  c.rotate(b.heading + b.steer*0.12 + airWob);
+
+  // rear wheel + swingarm
+  c.fillStyle='#141519';
+  c.beginPath(); c.roundRect(-17,-3.6,10,7.2,3); c.fill();
+  c.fillStyle='#3a3d45'; c.fillRect(-13.6,-1,3.2,2);
+  c.strokeStyle='#2c2f36'; c.lineWidth=2.4;
+  c.beginPath(); c.moveTo(-12,0); c.lineTo(-4,0); c.stroke();
+
+  // exhaust
+  c.strokeStyle='#9aa0ab'; c.lineWidth=2.6;
+  c.beginPath(); c.moveTo(-2,3.4); c.lineTo(-14,4.6); c.stroke();
+
+  // nitro flame
+  if (b.nitroT>0){
+    const L=8+Math.random()*6;
+    c.fillStyle='#ffb347';
+    c.beginPath(); c.moveTo(-17,0); c.lineTo(-21-L,-2.6); c.lineTo(-21-L,2.6); c.closePath(); c.fill();
+    c.fillStyle='#5fc9ff';
+    c.beginPath(); c.moveTo(-17,0); c.lineTo(-17-L,-1.7); c.lineTo(-17-L,1.7); c.closePath(); c.fill();
+  }
+
+  // front wheel steers with input
+  c.save();
+  c.translate(12.5,0); c.rotate(b.steer*0.45);
+  c.fillStyle='#141519';
+  c.beginPath(); c.roundRect(-4.5,-3.4,9,6.8,3); c.fill();
+  c.fillStyle='#3a3d45'; c.fillRect(-1.4,-1,2.8,2);
+  c.restore();
+
+  // forks
+  c.strokeStyle='#c7ccd6'; c.lineWidth=1.8;
+  c.beginPath(); c.moveTo(8,-2.6); c.lineTo(12.5,-2.6); c.moveTo(8,2.6); c.lineTo(12.5,2.6); c.stroke();
+
+  // rear fender + tank shrouds (paint color)
+  c.fillStyle=col; c.strokeStyle='#141519'; c.lineWidth=1.4;
+  c.beginPath();
+  c.moveTo(-6,-3); c.lineTo(-15,-2.2); c.lineTo(-15,2.2); c.lineTo(-6,3); c.closePath();
+  c.fill(); c.stroke();
+  c.beginPath();
+  c.moveTo(9,0); c.lineTo(5,-4.6); c.lineTo(-4,-4); c.lineTo(-6,0); c.lineTo(-4,4); c.lineTo(5,4.6);
+  c.closePath(); c.fill(); c.stroke();
+  c.fillStyle=lite;
+  c.beginPath(); c.moveTo(8,-0.6); c.lineTo(4.6,-3.4); c.lineTo(-2,-3); c.lineTo(-2,-0.6); c.closePath(); c.fill();
+
+  // front fender
+  c.fillStyle=col;
+  c.beginPath(); c.roundRect(9.5,-2.6,7.6,5.2,2.4); c.fill(); c.stroke();
+
+  // seat
+  c.fillStyle='#1c1e24';
+  c.beginPath(); c.roundRect(-9,-2.6,8,5.2,2); c.fill();
+
+  // rider: torso, arms, gloves, helmet
+  c.fillStyle=dark; c.strokeStyle='#141519'; c.lineWidth=1.3;
+  c.beginPath(); c.ellipse(-3.4,0,5.6,4.6,0,0,Math.PI*2); c.fill(); c.stroke();
+  c.strokeStyle=dark; c.lineWidth=2.2;
+  c.beginPath(); c.moveTo(-1.2,-3.6); c.lineTo(7.6,-5.4); c.moveTo(-1.2,3.6); c.lineTo(7.6,5.4); c.stroke();
+  c.fillStyle='#17181c';
+  c.beginPath(); c.arc(7.6,-5.4,1.4,0,Math.PI*2); c.fill();
+  c.beginPath(); c.arc(7.6,5.4,1.4,0,Math.PI*2); c.fill();
+  c.fillStyle=col; c.strokeStyle='#141519'; c.lineWidth=1.4;
+  c.beginPath(); c.arc(-1.6,0,3.9,0,Math.PI*2); c.fill(); c.stroke();
+  c.fillStyle='#141519';
+  c.beginPath(); c.roundRect(0.8,-2.2,2.2,4.4,1.2); c.fill();
+  c.fillStyle=lite; c.fillRect(-4.6,-0.7,3.4,1.4);
+
+  // handlebar turns with steering
+  c.strokeStyle='#dcdfe6'; c.lineWidth=2;
+  c.save(); c.translate(8.6,0); c.rotate(b.steer*0.45);
+  c.beginPath(); c.moveTo(0,-6.4); c.lineTo(0,6.4); c.stroke();
+  c.fillStyle='#17181c'; c.fillRect(-1,-7.4,2,2.2); c.fillRect(-1,5.2,2,2.2);
+  c.restore();
+
+  c.restore();
+
+  // floating plate number
+  c.save(); c.translate(b.x, b.y - b.z*0.5 - 19);
+  c.fillStyle='#f2c928';
+  c.beginPath(); c.roundRect(-10,-8,20,13,3); c.fill();
+  c.fillStyle='#17181c'; c.font='bold 10px sans-serif'; c.textAlign='center'; c.textBaseline='middle';
+  c.fillText(String(b.plate), 0, -1.5);
+  c.restore();
+}
+
+function render(){
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.fillStyle='#101114';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  if (!track || (!race.active && currentScreen!=='race')) return;
+  ctx.setTransform(view.s,0,0,view.s,view.ox,view.oy);
+  if (trackCanvas) ctx.drawImage(trackCanvas,0,0);
+
+  // pickups
+  for (const p of track.pickups){
+    if (!p.active) continue;
+    ctx.save(); ctx.translate(p.x,p.y);
+    const bob = Math.sin(race.t*4 + p.x)*2;
+    if (p.type==='cash'){
+      ctx.fillStyle='#2c7a24'; ctx.beginPath(); ctx.arc(0,bob,11,0,Math.PI*2); ctx.fill();
+      ctx.fillStyle='#8ef07f'; ctx.font='bold 14px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('⚙',0,bob+1);
+    } else {
+      ctx.fillStyle='#1b5f80'; ctx.fillRect(-7,bob-11,14,22);
+      ctx.fillStyle='#5fc9ff'; ctx.fillRect(-4,bob-14,8,5);
+      ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText('N',0,bob+1);
+    }
+    ctx.restore();
+  }
+
+  // bikes sorted by y then z for layering
+  const drawOrder = bikes.slice().sort((a,b)=>(a.y+a.z)-(b.y+b.z));
+  for (const b of drawOrder) drawBike(ctx, b);
+
+  // popups
+  for (const p of race.popups){
+    ctx.globalAlpha = Math.min(1, p.ttl*2);
+    ctx.fillStyle=p.color; ctx.font='bold 20px sans-serif'; ctx.textAlign='center';
+    ctx.fillText(p.text, p.x, p.y);
+    ctx.globalAlpha=1;
+  }
+}
+
+/* ---------------- HUD ---------------- */
+let currentScreen='menu';
+function hudInit(){
+  document.getElementById('count').style.display='block';
+  hudUpdate(true);
+}
+let lastHud='';
+function fmtTime(t){
+  const m=Math.floor(t/60), s=Math.floor(t%60), d=Math.floor((t*10)%10);
+  return m+':'+String(s).padStart(2,'0')+'.'+d;
+}
+function hudUpdate(force){
+  const p=bikes[0];
+  const order=racePositions();
+  const pos=order.indexOf(p)+1;
+  const lapShown=Math.max(1, Math.min(race.laps, p.lap));
+  const key=pos+'|'+lapShown+'|'+Math.floor(race.t*10)+'|'+p.nitro+'|'+p.cash+'|'+p.style;
+  if (!force && key===lastHud) return;
+  lastHud=key;
+  document.getElementById('hud-pos').textContent = pos + ['st','nd','rd','th'][pos-1];
+  document.getElementById('hud-lap').textContent = 'LAP '+lapShown+'/'+race.laps;
+  document.getElementById('hud-time').textContent = fmtTime(race.t);
+  document.getElementById('hud-cash').textContent = '+'+p.cash+'⚙';
+  document.getElementById('hud-style').textContent = p.style+' STYLE';
+  const pips=document.getElementById('nitro-pips');
+  let s='';
+  for(let i=0;i<Math.max(p.stats.charges, p.nitro);i++) s += '<i class="'+(i<p.nitro?'on':'')+'"></i>';
+  pips.innerHTML=s;
+}
+
+/* ---------------- INPUT: touch joystick + buttons + keys ---------------- */
+const input = { steer:0, gas:false, brake:false };
+const joy = { active:false, id:null, cx:0, cy:0 };
+const joyZone = document.getElementById('joy-zone');
+const joyBase = document.getElementById('joy-base');
+const joyStick = document.getElementById('joy-stick');
+const JOY_R = 56;
+
+function joyStart(x,y,id){
+  joy.active=true; joy.id=id; joy.cx=x; joy.cy=y;
+  joyBase.style.display='block';
+  joyBase.style.left=(x-70)+'px'; joyBase.style.top=(y-70)+'px';
+  joyMove(x,y);
+}
+function joyMove(x,y){
+  let dx=x-joy.cx, dy=y-joy.cy;
+  const d=Math.hypot(dx,dy);
+  if (d>JOY_R){ dx=dx/d*JOY_R; dy=dy/d*JOY_R; }
+  joyStick.style.transform='translate('+dx+'px,'+dy+'px)';
+  input.steer = Math.max(-1, Math.min(1, dx/ (JOY_R*0.75)));
+}
+function joyEnd(){
+  joy.active=false; joy.id=null; input.steer=0;
+  joyBase.style.display='none';
+  joyStick.style.transform='translate(0,0)';
+}
+joyZone.addEventListener('touchstart', e=>{
+  e.preventDefault();
+  const t=e.changedTouches[0];
+  if (!joy.active) joyStart(t.clientX, t.clientY, t.identifier);
+},{passive:false});
+joyZone.addEventListener('touchmove', e=>{
+  e.preventDefault();
+  for (const t of e.changedTouches) if (t.identifier===joy.id) joyMove(t.clientX,t.clientY);
+},{passive:false});
+const joyDone = e=>{
+  for (const t of e.changedTouches) if (t.identifier===joy.id) joyEnd();
+};
+joyZone.addEventListener('touchend', joyDone);
+joyZone.addEventListener('touchcancel', joyDone);
+// mouse fallback for desktop testing
+joyZone.addEventListener('mousedown', e=>{ joyStart(e.clientX,e.clientY,'m');
+  const mm=ev=>joyMove(ev.clientX,ev.clientY);
+  const mu=()=>{ joyEnd(); removeEventListener('mousemove',mm); removeEventListener('mouseup',mu); };
+  addEventListener('mousemove',mm); addEventListener('mouseup',mu);
+});
+
+function bindBtn(id, on, off){
+  const el=document.getElementById(id);
+  const down=e=>{ e.preventDefault(); el.classList.add('pressed'); on(); };
+  const up=e=>{ if(e) e.preventDefault(); el.classList.remove('pressed'); if(off) off(); };
+  el.addEventListener('touchstart',down,{passive:false});
+  el.addEventListener('touchend',up); el.addEventListener('touchcancel',up);
+  el.addEventListener('mousedown',down); el.addEventListener('mouseup',up); el.addEventListener('mouseleave',()=>up());
+}
+bindBtn('btn-gas',  ()=>input.gas=true,  ()=>input.gas=false);
+bindBtn('btn-brake',()=>input.brake=true,()=>input.brake=false);
+bindBtn('btn-nitro',()=>{
+  const p=bikes[0];
+  if (p && race.started && !race.over && p.nitro>0 && p.nitroT<=0){
+    p.nitro--; p.nitroT=1.6; popup(p.x,p.y-24,'NITRO!','#5fc9ff'); audioNitro();
+  }
+});
+
+addEventListener('keydown', e=>{
+  if (e.key==='ArrowLeft'||e.key==='a') input.steer=-1;
+  if (e.key==='ArrowRight'||e.key==='d') input.steer=1;
+  if (e.key==='ArrowUp'||e.key==='w') input.gas=true;
+  if (e.key==='ArrowDown'||e.key==='s') input.brake=true;
+  if (e.key===' '){ document.getElementById('btn-nitro').dispatchEvent(new Event('mousedown')); document.getElementById('btn-nitro').dispatchEvent(new Event('mouseup')); }
+});
+addEventListener('keyup', e=>{
+  if (['ArrowLeft','a','ArrowRight','d'].includes(e.key)) input.steer=0;
+  if (e.key==='ArrowUp'||e.key==='w') input.gas=false;
+  if (e.key==='ArrowDown'||e.key==='s') input.brake=false;
+});
+
+function applyPlayerInput(){
+  const p=bikes[0];
+  if (!p || !race.started || p.finished) return;
+  p.steer=input.steer;
+  p.throttle=input.gas?1:0;
+  p.brake=input.brake?1:0;
+}
+
+/* ---------------- AUDIO (tiny synth) ---------------- */
+let AC=null, engOsc=null, engGain=null, engFilter=null;
+function audioInit(){
+  if (AC || G.muted) return;
+  try{
+    AC = new (window.AudioContext||window.webkitAudioContext)();
+    engOsc=AC.createOscillator(); engOsc.type='sawtooth';
+    engFilter=AC.createBiquadFilter(); engFilter.type='lowpass'; engFilter.frequency.value=600;
+    engGain=AC.createGain(); engGain.gain.value=0;
+    engOsc.connect(engFilter); engFilter.connect(engGain); engGain.connect(AC.destination);
+    engOsc.start();
+  }catch(e){ AC=null; }
+}
+function audioRace(on){
+  if (!AC||!engGain) return;
+  engGain.gain.linearRampToValueAtTime(on&&!G.muted?0.045:0, AC.currentTime+0.3);
+}
+function audioTick(){
+  if (!AC||!engOsc||!bikes[0]) return;
+  const p=bikes[0];
+  const f = 55 + (p.speed/Math.max(200,p.stats.top))*150 + (p.nitroT>0?40:0);
+  engOsc.frequency.setTargetAtTime(f, AC.currentTime, 0.05);
+}
+function audioNitro(){
+  if(!AC||G.muted) return;
+  try{
+    const o=AC.createOscillator(), g=AC.createGain();
+    o.type='square'; o.frequency.value=220;
+    o.frequency.exponentialRampToValueAtTime(880, AC.currentTime+0.25);
+    g.gain.value=0.06; g.gain.exponentialRampToValueAtTime(0.001, AC.currentTime+0.3);
+    o.connect(g); g.connect(AC.destination); o.start(); o.stop(AC.currentTime+0.32);
+  }catch(e){}
+}
+
+/* ---------------- SCREENS & UI ---------------- */
+const screens=['menu','tracks','garage','race','results'];
+function setScreen(name){
+  currentScreen=name;
+  for (const s of screens){
+    document.getElementById('scr-'+s).classList.toggle('show', s===name);
+  }
+  document.getElementById('hud').classList.toggle('show', name==='race');
+  document.getElementById('controls').classList.toggle('show', name==='race');
+  if (name==='menu') renderMenu();
+  if (name==='tracks') renderTracks();
+  if (name==='garage') renderGarage();
+}
+
+function renderMenu(){
+  document.getElementById('menu-wallet').textContent=G.wallet.toLocaleString()+' ⚙';
+  document.getElementById('menu-stats').textContent=G.wins+' wins · '+G.races+' races · '+G.earnings.toLocaleString()+'⚙ earned';
+}
+
+function renderTracks(){
+  const wrap=document.getElementById('track-list');
+  wrap.innerHTML='';
+  TRACKS.forEach((t,i)=>{
+    const best=G.best[i];
+    const card=document.createElement('button');
+    card.className='track-card';
+    card.innerHTML =
+      '<span class="tnum">'+String(i+1).padStart(2,'0')+'</span>'+
+      '<span class="tname">'+t.name+'</span>'+
+      '<span class="tmeta">'+t.laps+' laps · purse ×'+t.purse.toFixed(1)+'</span>'+
+      '<span class="tbest">'+(best? 'BEST '+fmtTime(best/1000) : 'NO TIME SET')+'</span>';
+    card.addEventListener('click',()=>{ audioInit(); startRace(i); });
+    wrap.appendChild(card);
+  });
+  document.getElementById('tracks-wallet').textContent=G.wallet.toLocaleString()+' ⚙';
+}
+
+function renderGarage(){
+  document.getElementById('garage-wallet').textContent=G.wallet.toLocaleString()+' ⚙';
+  // stat bars
+  const st=statPct(bikeStats());
+  const bars={ 'st-top':st.top,'st-acc':st.accel,'st-han':st.steer,'st-jmp':st.land,'st-nit':st.nitro };
+  for (const k in bars){
+    document.getElementById(k).style.width=Math.round(8+bars[k]*92)+'%';
+  }
+  // parts
+  const pw=document.getElementById('parts-wrap');
+  pw.innerHTML='';
+  for (const slot of SLOTS){
+    const box=document.createElement('div'); box.className='slot-box';
+    box.innerHTML='<div class="slot-title">'+SLOT_LABEL[slot]+'</div>';
+    const row=document.createElement('div'); row.className='slot-row';
+    for (const part of PARTS.filter(p=>p.slot===slot)){
+      const owned=G.owned.has(part.id);
+      const equipped=G.equipped[slot]===part.id;
+      const b=document.createElement('button');
+      b.className='part'+(equipped?' equipped':owned?' owned':'');
+      b.innerHTML='<span class="pname">'+part.name+'</span><span class="pprice">'+
+        (equipped?'EQUIPPED':owned?'TAP TO EQUIP':part.price.toLocaleString()+' ⚙')+'</span>';
+      b.addEventListener('click',()=>{
+        if (equipped) return;
+        if (owned){ G.equipped[slot]=part.id; renderGarage(); return; }
+        if (G.wallet>=part.price){
+          G.wallet-=part.price; G.owned.add(part.id); G.equipped[slot]=part.id; renderGarage();
+        } else flashWallet('garage-wallet');
+      });
+      row.appendChild(b);
+    }
+    box.appendChild(row); pw.appendChild(box);
+  }
+  // colors
+  const cw=document.getElementById('color-wrap');
+  cw.innerHTML='';
+  for (const col of COLORS){
+    const owned=G.ownedColors.has(col.id);
+    const sel=G.color===col.id;
+    const b=document.createElement('button');
+    b.className='swatch'+(sel?' sel':'');
+    b.style.background=col.hex;
+    b.innerHTML= owned? '' : '<span>'+col.price+'⚙</span>';
+    b.title=col.name;
+    b.addEventListener('click',()=>{
+      if (owned){ G.color=col.id; renderGarage(); return; }
+      if (G.wallet>=col.price){ G.wallet-=col.price; G.ownedColors.add(col.id); G.color=col.id; renderGarage(); }
+      else flashWallet('garage-wallet');
+    });
+    cw.appendChild(b);
+  }
+  document.getElementById('plate-num').textContent=G.plate;
+}
+function flashWallet(id){
+  const el=document.getElementById(id);
+  el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
+}
+document.getElementById('plate-up').addEventListener('click',()=>{ G.plate=(G.plate%99)+1; renderGarage(); });
+document.getElementById('plate-dn').addEventListener('click',()=>{ G.plate=((G.plate+97)%99)+1; renderGarage(); });
+
+function showResults(r){
+  setScreen('results');
+  const placeTxt=['1st PLACE!','2nd PLACE','3rd PLACE','4th PLACE'][r.place];
+  document.getElementById('res-place').textContent=placeTxt;
+  document.getElementById('res-place').className='res-place p'+r.place;
+  const purse=TRACKS[G.trackIndex].purse;
+  const rows=[
+    ['Finish payout ×'+purse.toFixed(1), r.basePay],
+    ['Style bonus', r.stylePay],
+    ['Track pickups', r.cash],
+    ['Best lap bonus', r.bestLapBonus],
+  ];
+  const tb=document.getElementById('res-rows');
+  tb.innerHTML=rows.map(x=>'<div class="rrow"><span>'+x[0]+'</span><b>+'+x[1].toLocaleString()+' ⚙</b></div>').join('');
+  document.getElementById('res-total').textContent='+'+r.total.toLocaleString()+' ⚙';
+  document.getElementById('res-wallet').textContent=G.wallet.toLocaleString()+' ⚙';
+  // standings
+  document.getElementById('res-order').innerHTML=r.order.map((b,i)=>
+    '<div class="orow'+(b.isAI?'':' me')+'"><i style="background:'+b.color+'"></i>'+(i+1)+'. '+b.name+
+    (b.finished?' — '+fmtTime(b.finishTime):' — DNF')+'</div>').join('');
+  const ni=G.trackIndex+1;
+  const nextBtn=document.getElementById('res-next');
+  nextBtn.style.display = ni<TRACKS.length ? 'block':'none';
+  nextBtn.textContent='NEXT: '+(TRACKS[ni]?TRACKS[ni].name.toUpperCase():'');
+}
+
+document.getElementById('btn-race').addEventListener('click',()=>{ audioInit(); setScreen('tracks'); });
+document.getElementById('btn-garage').addEventListener('click',()=>setScreen('garage'));
+document.getElementById('tracks-back').addEventListener('click',()=>setScreen('menu'));
+document.getElementById('garage-back').addEventListener('click',()=>setScreen('menu'));
+document.getElementById('res-again').addEventListener('click',()=>startRace(G.trackIndex));
+document.getElementById('res-next').addEventListener('click',()=>startRace(Math.min(TRACKS.length-1,G.trackIndex+1)));
+document.getElementById('res-garage').addEventListener('click',()=>setScreen('garage'));
+document.getElementById('res-menu').addEventListener('click',()=>setScreen('menu'));
+
+// pause
+document.getElementById('btn-pause').addEventListener('click',()=>{ paused=true; document.getElementById('pause-ov').classList.add('show'); audioRace(false); });
+document.getElementById('pause-resume').addEventListener('click',()=>{ paused=false; document.getElementById('pause-ov').classList.remove('show'); audioRace(true); });
+document.getElementById('pause-restart').addEventListener('click',()=>{ paused=false; document.getElementById('pause-ov').classList.remove('show'); startRace(G.trackIndex); });
+document.getElementById('pause-quit').addEventListener('click',()=>{ paused=false; race.active=false; document.getElementById('pause-ov').classList.remove('show'); audioRace(false); setScreen('menu'); });
+document.getElementById('btn-mute').addEventListener('click',e=>{
+  G.muted=!G.muted;
+  e.target.textContent=G.muted?'🔇':'🔊';
+  if (G.muted) audioRace(false); else if (race.active) audioRace(true);
+});
+document.getElementById('btn-fs').addEventListener('click',()=>{
+  const el=document.documentElement;
+  if (!document.fullscreenElement){
+    if (el.requestFullscreen) el.requestFullscreen().then(()=>{
+      if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(()=>{});
+    }).catch(()=>{});
+  } else if (document.exitFullscreen) document.exitFullscreen();
+});
+
+/* ---------------- MAIN LOOP ---------------- */
+let lastT=performance.now();
+function frame(now){
+  const dt=Math.min(0.033,(now-lastT)/1000);
+  lastT=now;
+  if (race.active && currentScreen==='race'){
+    applyPlayerInput();
+    updateRace(dt);
+    render();
+  }
+  requestAnimationFrame(frame);
+}
+
+resize();
+setScreen('menu');
+requestAnimationFrame(frame);
+
+</script>
+</body>
+</html>

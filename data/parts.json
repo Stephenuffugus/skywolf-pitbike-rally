@@ -1,0 +1,190 @@
+{
+  "slots": [
+    "engine",
+    "tires",
+    "susp",
+    "nitro",
+    "gears"
+  ],
+  "slotLabels": {
+    "engine": "Engine",
+    "tires": "Tires",
+    "susp": "Suspension",
+    "nitro": "Nitro tank",
+    "gears": "Gearing"
+  },
+  "parts": [
+    {
+      "slot": "engine",
+      "id": "eng0",
+      "name": "Stock 50cc",
+      "tier": 0,
+      "price": 0,
+      "top": 0,
+      "accel": 0
+    },
+    {
+      "slot": "engine",
+      "id": "eng1",
+      "name": "88cc Kit",
+      "tier": 1,
+      "price": 1200,
+      "top": 40,
+      "accel": 35
+    },
+    {
+      "slot": "engine",
+      "id": "eng2",
+      "name": "125 Big Bore",
+      "tier": 2,
+      "price": 3000,
+      "top": 85,
+      "accel": 70
+    },
+    {
+      "slot": "engine",
+      "id": "eng3",
+      "name": "190 Race Motor",
+      "tier": 3,
+      "price": 6500,
+      "top": 140,
+      "accel": 115
+    },
+    {
+      "slot": "tires",
+      "id": "tir0",
+      "name": "Stock Knobby",
+      "tier": 0,
+      "price": 0,
+      "steer": 0,
+      "grip": 0
+    },
+    {
+      "slot": "tires",
+      "id": "tir1",
+      "name": "Soft Compound",
+      "tier": 1,
+      "price": 800,
+      "steer": 0.25,
+      "grip": 0.06
+    },
+    {
+      "slot": "tires",
+      "id": "tir2",
+      "name": "Paddle Pro",
+      "tier": 2,
+      "price": 2000,
+      "steer": 0.5,
+      "grip": 0.14
+    },
+    {
+      "slot": "tires",
+      "id": "tir3",
+      "name": "Race Hybrid",
+      "tier": 3,
+      "price": 4500,
+      "steer": 0.85,
+      "grip": 0.22
+    },
+    {
+      "slot": "susp",
+      "id": "sus0",
+      "name": "Stock Forks",
+      "tier": 0,
+      "price": 0,
+      "land": 0
+    },
+    {
+      "slot": "susp",
+      "id": "sus1",
+      "name": "Sport Setup",
+      "tier": 1,
+      "price": 900,
+      "land": 0.35
+    },
+    {
+      "slot": "susp",
+      "id": "sus2",
+      "name": "Race Setup",
+      "tier": 2,
+      "price": 2400,
+      "land": 0.65
+    },
+    {
+      "slot": "susp",
+      "id": "sus3",
+      "name": "Factory Works",
+      "tier": 3,
+      "price": 5200,
+      "land": 1
+    },
+    {
+      "slot": "nitro",
+      "id": "nit0",
+      "name": "Single Bottle",
+      "tier": 0,
+      "price": 0,
+      "charges": 1
+    },
+    {
+      "slot": "nitro",
+      "id": "nit1",
+      "name": "Twin Bottles",
+      "tier": 1,
+      "price": 1000,
+      "charges": 2
+    },
+    {
+      "slot": "nitro",
+      "id": "nit2",
+      "name": "Race Rack",
+      "tier": 2,
+      "price": 2600,
+      "charges": 3
+    },
+    {
+      "slot": "nitro",
+      "id": "nit3",
+      "name": "Ironman Rack",
+      "tier": 3,
+      "price": 5500,
+      "charges": 4
+    },
+    {
+      "slot": "gears",
+      "id": "grs0",
+      "name": "Balanced Gearing",
+      "tier": 0,
+      "price": 0,
+      "top": 0,
+      "accel": 0
+    },
+    {
+      "slot": "gears",
+      "id": "grs1",
+      "name": "Short Gearing",
+      "tier": 1,
+      "price": 700,
+      "top": -20,
+      "accel": 45
+    },
+    {
+      "slot": "gears",
+      "id": "grs2",
+      "name": "Tall Gearing",
+      "tier": 2,
+      "price": 700,
+      "top": 45,
+      "accel": -20
+    },
+    {
+      "slot": "gears",
+      "id": "grs3",
+      "name": "Close-Ratio Race",
+      "tier": 3,
+      "price": 1800,
+      "top": 25,
+      "accel": 25
+    }
+  ]
+}
