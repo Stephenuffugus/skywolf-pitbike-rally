@@ -1,5 +1,20 @@
 # Changelog
 
+## 2026-07-04 — v1.4 cache-freeze fix + progression unlocks + menu fit
+- ROOT CAUSE of "race stuck at 3": the portal host ignores no-cache headers
+  (modules observed cached 4h, one 7 DAYS) and served players mixed old/new
+  module builds. Fix: every deploy is version-stamped — src-<hash>/ module
+  dir + ?v=<hash> on all json/css/img fetches (vendor script rewrites) — so
+  caches can never mix two builds again. Belt+suspenders: frame loop now
+  survives per-frame exceptions, and a boot watchdog overlays a RELOAD
+  button if a dead module graph is detected.
+- PROGRESSION UNLOCKS: parts now unlock as a ladder — a tier-N part needs a
+  tier N-1 part owned in the same slot (rotating legendary stock included).
+  No more saving up to buy the fastest part first; locked cards show what
+  to own next.
+- Menu no longer clips the title on short landscape phones (flex spacers +
+  scroll fallback + tighter sizes under 560px height).
+
 ## 2026-07-04 — v1.3 pose sprites + 7 biome grounds (drop 2)
 - Bike pose sprites on-track: airborne (standing on pegs), landing
   (suspension compressed, 0.28s after touchdown), lean left/right (banked

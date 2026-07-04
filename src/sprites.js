@@ -4,14 +4,15 @@
 let img = null;
 let map = {};
 
-/* Bump when terrain/bg image CONTENT changes under the same filename — js is
-   served no-cache on the portal, so this reaches players; bare image URLs
-   can be cached for up to a year there. The atlas png busts itself via the
-   __v content hash build_atlas.py writes into atlas.json. */
-export const ART_V = '20260704a';
+/* Deploy version for cache-busting EVERY fetched asset (json/jpg). The portal
+   host ignores no-cache headers (observed: modules served max-age=14400, one
+   even 604800 — players got frozen mixed-version builds), so only unique URLs
+   are safe. The vendor script rewrites this to the deploy hash; bump manually
+   when releasing from the canonical repo. */
+export const ART_V = '20260704c';
 
 export async function loadAtlas() {
-  const r = await fetch('assets/atlas.json');
+  const r = await fetch('assets/atlas.json?v=' + ART_V);
   map = await r.json();
   img = new Image();
   img.src = 'assets/atlas.png?v=' + (map.__v || ART_V);

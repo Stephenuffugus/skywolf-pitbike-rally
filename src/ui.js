@@ -7,6 +7,7 @@ import { saveNow } from './save.js';
 import { audioInit, audioRace } from './audio.js';
 import { partWear, repairCost, repairPart, repairAll, repairAllCost, rotatingStock, racesUntilRestock } from './shop.js';
 import { VARIANTS } from './track.js';
+import { ART_V } from './sprites.js';
 
 const screens = ['menu', 'tracks', 'garage', 'race', 'results'];
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' };
@@ -14,13 +15,13 @@ const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' };
 /* wave 0704 art: medal PNGs (emoji fallback if the file is missing) and
    part-slot icons. Slot keys differ from icon names in three places. */
 function medalImg(m, cls) {
-  return '<img class="' + cls + '" src="assets/art/ui/ui_medal_' + m + '.png" alt="' + m +
+  return '<img class="' + cls + '" src="assets/art/ui/ui_medal_' + m + '.png?v=' + ART_V + '" alt="' + m +
     '" onerror="this.replaceWith(\'' + MEDAL_ICON[m] + '\')">';
 }
 const PART_ICON_NAME = { tires: 'tire', susp: 'forks', gears: 'sprocket' };
 function partIcon(slot, cls) {
   const n = PART_ICON_NAME[slot] || slot;
-  return '<img class="' + cls + '" src="assets/art/ui/ui_part_' + n + '.png" alt="" onerror="this.remove()">';
+  return '<img class="' + cls + '" src="assets/art/ui/ui_part_' + n + '.png?v=' + ART_V + '" alt="" onerror="this.remove()">';
 }
 
 /* The delivered bike art is green; approximate the chosen paint with a CSS
@@ -155,14 +156,36 @@ export function renderTracks() {
   document.getElementById('tracks-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
 }
 
+/* Progression ladder: a tier-N part unlocks only once you own a tier N-1
+   part in the same slot (rotating stock included — its tier gates it too).
+   Stops the "save up and buy the fastest part first" shortcut: upgrades are
+   earned slot by slot, race by race. */
+function partLockedBy(part) {
+  const G = S.G;
+  if (G.owned.has(part.id) || !part.price) return null;
+  const need = (part.tier || 1) - 1;
+  if (need <= 0) return null;
+  const slotParts = S.DATA.parts.parts.filter(p => p.slot === part.slot);
+  let maxOwned = 0;
+  for (const p of slotParts) {
+    if ((!p.price || G.owned.has(p.id)) && (p.tier || 0) > maxOwned) maxOwned = p.tier || 0;
+  }
+  if (maxOwned >= need) return null;
+  const prev = slotParts.find(p => !p.rot && (p.tier || 0) === need);
+  return prev ? prev.name : 'a tier ' + need + ' part';
+}
+
 function partCard(part, opts) {
   const G = S.G;
   const owned = G.owned.has(part.id);
   const equipped = G.equipped[part.slot] === part.id;
+  const lockedBy = partLockedBy(part);
   const wear = partWear(part.id);
   const b = document.createElement('button');
-  b.className = 'part r-' + part.r + (equipped ? ' equipped' : owned ? ' owned' : '');
-  let priceLine = equipped ? 'EQUIPPED' : owned ? 'TAP TO EQUIP' : part.price.toLocaleString() + ' ⚙';
+  b.className = 'part r-' + part.r + (equipped ? ' equipped' : owned ? ' owned' : '') + (lockedBy ? ' locked' : '');
+  let priceLine = equipped ? 'EQUIPPED' : owned ? 'TAP TO EQUIP'
+    : lockedBy ? '🔒 OWN ' + lockedBy.toUpperCase() + ' FIRST'
+    : part.price.toLocaleString() + ' ⚙';
   let wearLine = '';
   if (owned && part.price > 0) {
     const cls = wear >= 70 ? 'bad' : wear >= 35 ? 'mid' : '';
@@ -182,6 +205,7 @@ function partCard(part, opts) {
     }
     if (equipped) return;
     if (owned) { G.equipped[part.slot] = part.id; saveNow(); renderGarage(); return; }
+    if (partLockedBy(part)) { flashWallet('garage-wallet'); return; }
     if (G.wallet >= part.price) {
       G.wallet -= part.price; G.owned.add(part.id); G.equipped[part.slot] = part.id; saveNow(); renderGarage();
     } else flashWallet('garage-wallet');
@@ -277,9 +301,9 @@ export function showResults(r) {
   document.getElementById('res-place').textContent = placeTxt;
   document.getElementById('res-place').className = 'res-place banner p' + r.place;
   const hero = document.getElementById('res-hero');
-  hero.src = r.place === 0 ? 'assets/art/bike/bikeview_victory_f01.png'
+  hero.src = (r.place === 0 ? 'assets/art/bike/bikeview_victory_f01.png'
            : r.place === 3 ? 'assets/art/bike/bikeview_downed.png'
-           : 'assets/art/bike/bikeview_ride_a.png';
+           : 'assets/art/bike/bikeview_ride_a.png') + '?v=' + ART_V;
   applyPaintToHeroes();
 
   const t = S.DATA.tracks[S.race.trackIndex];

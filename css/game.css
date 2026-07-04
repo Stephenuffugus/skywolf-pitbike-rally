@@ -36,7 +36,10 @@ canvas#game{ position:fixed; inset:0; display:block; }
 .scr-body{ flex:1 1 auto; overflow-y:auto; touch-action:pan-y; -webkit-overflow-scrolling:touch; padding-bottom:10px; }
 
 /* ---- menu ---- */
-#scr-menu{ align-items:center; justify-content:center; text-align:center; }
+#scr-menu{ align-items:center; justify-content:flex-start; text-align:center; overflow-y:auto; }
+/* flexible spacers: centered layout when there is room, scrollable when not
+   (justify-content:center CLIPS the top of overflowing flex columns) */
+#scr-menu::before, #scr-menu::after{ content:''; flex:1 0 10px; }
 .logo-kick{ color:var(--burn); font-size:15px; letter-spacing:4px; font-weight:800; }
 .logo{ font-size:min(13vw,74px); line-height:0.95; color:#fff; margin:6px 0 2px; }
 .logo b{ color:var(--plate); }
@@ -249,3 +252,15 @@ canvas#game{ position:fixed; inset:0; display:block; }
 .medal-chip{ width:12px; height:12px; object-fit:contain; vertical-align:-1px; }
 .medal-row{ width:16px; height:16px; object-fit:contain; vertical-align:-3px; }
 @media (max-height:420px){ .logo-img{ max-height:20vh; } }
+
+/* short landscape phones: keep the whole menu on screen */
+@media (max-height:560px){
+  .logo-img{ max-height:19vh; margin-top:2px; }
+  .menu-hero{ max-height:15vh; }
+  .logo-sub{ margin-bottom:10px; font-size:11px; }
+  .menu-foot{ margin-top:6px; font-size:12px; }
+  .sws-exit{ margin-top:2px; padding:6px; }
+}
+/* progression locks */
+.part.locked{ opacity:.6; }
+.part.locked .pprice{ color:#c9a25f; }

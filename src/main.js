@@ -10,6 +10,9 @@ import { render, resize } from './render.js';
 import { startRace } from './race.js';
 
 async function boot() {
+  // set the debug/watchdog handle BEFORE any await: the index.html watchdog
+  // uses its absence to detect a dead module graph (mixed-version cache)
+  window.__PBR = { S, startRace, setScreen };
   await loadData();
   loadSave();
   // parallel: terrain never depends on the atlas, and both gate the prerender
@@ -21,17 +24,24 @@ async function boot() {
   bindInput();
   resize();
   setScreen('menu');
-  // debug/test handle (harmless in production; used by smoke tests)
-  window.__PBR = { S, startRace, setScreen };
 
   let lastT = performance.now();
   function frame(now) {
-    const dt = Math.min(0.033, (now - lastT) / 1000);
-    lastT = now;
-    if (S.race.active && S.currentScreen === 'race') {
-      applyPlayerInput();
-      updateRace(dt);
-      render();
+    // one bad frame must never kill the loop (a dead rAF chain freezes the
+    // countdown forever) — log once, skip the frame, keep running
+    try {
+      const dt = Math.min(0.033, (now - lastT) / 1000);
+      lastT = now;
+      if (S.race.active && S.currentScreen === 'race') {
+        applyPlayerInput();
+        updateRace(dt);
+        render();
+      }
+    } catch (e) {
+      if (!window.__PBR_FRAME_ERR) {
+        window.__PBR_FRAME_ERR = true;
+        console.error('frame error (loop kept alive):', e);
+      }
     }
     requestAnimationFrame(frame);
   }

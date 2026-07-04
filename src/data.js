@@ -1,8 +1,9 @@
 /* Loads all tuning data. Balance passes edit data/*.json, never code. */
 import { S } from './state.js';
+import { ART_V } from './sprites.js';
 
 async function j(url) {
-  const r = await fetch(url);
+  const r = await fetch(url + '?v=' + ART_V);
   if (!r.ok) throw new Error(url + ' -> ' + r.status);
   return r.json();
 }
