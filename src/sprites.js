@@ -4,11 +4,17 @@
 let img = null;
 let map = {};
 
+/* Bump when terrain/bg image CONTENT changes under the same filename — js is
+   served no-cache on the portal, so this reaches players; bare image URLs
+   can be cached for up to a year there. The atlas png busts itself via the
+   __v content hash build_atlas.py writes into atlas.json. */
+export const ART_V = '20260704a';
+
 export async function loadAtlas() {
   const r = await fetch('assets/atlas.json');
   map = await r.json();
   img = new Image();
-  img.src = 'assets/atlas.png';
+  img.src = 'assets/atlas.png?v=' + (map.__v || ART_V);
   await img.decode();
   return map;
 }
@@ -35,4 +41,34 @@ export function drawSpr(ctx, name, x, y, size, rot, frame) {
 export function frameCount(name) {
   const e = map[name];
   return e ? (e.frames || 1) : 0;
+}
+
+/* Terrain tiles (wave2 0704): opaque 512px JPGs under assets/terrain/, used as
+   canvas patterns for the track prerender. Only the tiles the prerender
+   consumes are fetched; missing files degrade to the flat theme colors. */
+const terrains = {};
+const patternCache = {};
+
+export async function loadTerrain() {
+  const names = ['terrain_dirt_loam', 'terrain_mud_a', 'terrain_sand', 'ground_meadow'];
+  await Promise.all(names.map(n => new Promise(res => {
+    const im = new Image();
+    im.onload = () => { terrains[n] = im; res(); };
+    im.onerror = () => res();
+    im.src = 'assets/terrain/' + n + '.jpg?v=' + ART_V;
+  })));
+}
+
+/* Pattern with the tile repeating every `scale` world px. Null if not loaded. */
+export function terrainPattern(ctx, name, scale) {
+  const im = terrains[name];
+  if (!im) return null;
+  const key = name + '@' + scale;
+  if (!patternCache[key]) {
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = scale;
+    cv.getContext('2d').drawImage(im, 0, 0, scale, scale);
+    patternCache[key] = ctx.createPattern(cv, 'repeat');
+  }
+  return patternCache[key];
 }

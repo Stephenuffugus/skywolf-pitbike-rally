@@ -34,8 +34,10 @@ if (window.Sunbeam) {
     <button class="icon-btn" id="btn-mute" aria-label="Mute">🔊</button>
     <button class="icon-btn" id="btn-fs" aria-label="Fullscreen">⛶</button>
   </div>
-  <div class="logo-kick banner">SKYWOLF STUDIOS PRESENTS</div>
-  <h1 class="logo banner">PIT BIKE<br><b>RALLY</b></h1>
+  <div class="logo-kick banner" id="logo-kick" style="display:none">SKYWOLF STUDIOS PRESENTS</div>
+  <img class="logo-img" src="assets/art/ui/ui_logo_lockup.png" alt="Pit Bike Rally"
+       onerror="this.style.display='none';document.getElementById('logo-h1').style.display='';document.getElementById('logo-kick').style.display=''">
+  <h1 class="logo banner" id="logo-h1" style="display:none">PIT BIKE<br><b>RALLY</b></h1>
   <img class="menu-hero" id="menu-hero" src="assets/art/bike/bike_ride_f01.png" alt="">
   <div class="logo-sub">4 riders · 1 screen · dirt everywhere</div>
   <div class="menu-btns">

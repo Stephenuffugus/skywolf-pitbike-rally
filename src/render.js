@@ -40,7 +40,47 @@ function shade(hex, f) {
   return 'rgb(' + m(r) + ',' + m(g) + ',' + m(b2) + ')';
 }
 
+/* Sprite bike: top-down ride strip per paint (wave 0704 — Stephen's approved
+   top-down art). 3-frame bob cycle rolls with speed; steer adds a lean tilt;
+   airborne bikes scale up and cast a wider shadow. */
+function drawBikeSprite(c, b, name) {
+  const race = S.race;
+  c.save();
+  c.translate(b.x, b.y);
+  c.globalAlpha = 0.30;
+  c.fillStyle = '#000';
+  c.beginPath(); c.ellipse(2, 5 + b.z * 0.14, 13 + b.z * 0.06, 7.5 + b.z * 0.03, 0, 0, Math.PI * 2); c.fill();
+  c.restore();
+
+  const airWob = b.z > 0 ? Math.sin(race.t * 20) * 0.05 : 0;
+  const scale = 1 + Math.min(1, b.z * 0.012) * 0.22;
+  // constant-rate bob (like the flame/pickup anims): time x speed-varying rate
+  // is non-monotonic, so braking strobed the frame order. plate staggers bikes
+  // (b.idx is overwritten with the track-point index every physics tick).
+  const f = b.speed > 40 ? Math.floor(race.t * 9 + (b.plate || 0)) % 3 : 0;
+  c.save();
+  c.translate(b.x, b.y - b.z * 0.5);
+  c.rotate(b.heading + b.steer * 0.12 + airWob);
+  if (b.nitroT > 0) {
+    const nf = Math.floor(race.t * 18) % 3;
+    drawSpr(c, 'fx_nitro_flame_strip', -27 - Math.random() * 3, 0, 21 + Math.random() * 5, 0, nf);
+  }
+  drawSpr(c, name, 0, 0, 42 * scale, 0, f);
+  c.restore();
+
+  // floating plate number
+  c.save(); c.translate(b.x, b.y - b.z * 0.5 - 19);
+  c.fillStyle = '#f2c928';
+  c.beginPath(); c.roundRect(-10, -8, 20, 13, 3); c.fill();
+  c.fillStyle = '#17181c'; c.font = 'bold 10px sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+  c.fillText(String(b.plate), 0, -1.5);
+  c.restore();
+}
+
 function drawBike(c, b) {
+  const sprName = 'trackbike_' + (b.paint || 'green') + '_strip';
+  if (frameCount(sprName) > 0) { drawBikeSprite(c, b, sprName); return; }
+
   const race = S.race;
   // ground shadow
   c.save();
@@ -182,15 +222,17 @@ export function render() {
 
   drawGhost(ctx);
 
-  // pickups — atlas sprites (coin spin, nitro can bob), procedural fallback
-  const haveArt = frameCount('pickup_coin_f01') > 0;
+  // pickups — sprocket coin spin (wave 0704) > legacy coin frames > procedural
+  const haveSprocket = frameCount('pickup_sprocket_strip') > 0;
+  const haveArt = haveSprocket || frameCount('pickup_coin_f01') > 0;
   for (const p of track.pickups) {
     if (!p.active) continue;
     const bob = Math.sin(race.t * 4 + p.x) * 2;
     if (haveArt) {
       if (p.type === 'cash') {
-        const f = (Math.floor(race.t * 8 + p.x) % 4) + 1;
-        drawSpr(ctx, 'pickup_coin_f0' + f, p.x, p.y + bob, 26, 0, 0);
+        const f = Math.floor(race.t * 8 + p.x) % 4;
+        if (haveSprocket) drawSpr(ctx, 'pickup_sprocket_strip', p.x, p.y + bob, 26, 0, f);
+        else drawSpr(ctx, 'pickup_coin_f0' + (f + 1), p.x, p.y + bob, 26, 0, 0);
       } else {
         drawSpr(ctx, 'pickup_nitro_can', p.x, p.y + bob, 26, 0, 0);
       }
@@ -216,8 +258,9 @@ export function render() {
     const pulse = 1 + Math.sin(race.t * 6) * 0.12;
     ctx.save();
     ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 18;
-    const f = (Math.floor(race.t * 8) % 4) + 1;
-    if (frameCount('pickup_coin_f01')) drawSpr(ctx, 'pickup_coin_f0' + f, g.x, g.y, 40 * pulse, 0, 0);
+    const f = Math.floor(race.t * 8) % 4;
+    if (frameCount('pickup_sprocket_gold_strip')) drawSpr(ctx, 'pickup_sprocket_gold_strip', g.x, g.y, 40 * pulse, 0, f);
+    else if (frameCount('pickup_coin_f01')) drawSpr(ctx, 'pickup_coin_f0' + (f + 1), g.x, g.y, 40 * pulse, 0, 0);
     else { ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(g.x, g.y, 16 * pulse, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
   }

@@ -8,7 +8,9 @@ from PIL import Image
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ART = os.path.join(ROOT, 'assets', 'art')
-CATS = ['fx', 'props', 'pickup', 'ui']
+# 'ui' art is DOM <img> only (garage icons, medals, logo) — packing the
+# hi-res wave2 recuts into the atlas doubled its size for zero canvas use
+CATS = ['fx', 'props', 'pickup', 'trackbike']
 PAD = 2
 MAXW = 2048
 
@@ -20,6 +22,10 @@ STRIP_FRAMES = {
     'fx_confetti_strip': 4, 'fx_dirt_roost_strip': 4, 'fx_sand_burst_strip': 4,
     'fx_trail_dirt_strip': 4, 'fx_speed_lines_strip': 4, 'fx_dust_trail_strip': 3,
     'pickup_cash_strip': 3, 'pickup_key_strip': 3,
+    'pickup_sprocket_strip': 4, 'pickup_sprocket_gold_strip': 4,
+    # top-down ride strips (wave 0704): 3-frame bob cycle per paint
+    **{'trackbike_%s_strip' % p: 3 for p in
+       ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'white', 'black', 'mint']},
 }
 
 def clean_magenta(im):
@@ -73,11 +79,19 @@ def main():
         if name in STRIP_FRAMES:
             e['frames'] = STRIP_FRAMES[name]
         manifest[name] = e
-    atlas.save(os.path.join(ROOT, 'assets', 'atlas.png'), optimize=True)
+    # 256-color palette with dithering: visually lossless on flat cartoon
+    # sprites (verified frame-by-frame vs truecolor) and ~4-5x smaller
+    atlas.quantize(colors=256, method=Image.FASTOCTREE, dither=Image.FLOYDSTEINBERG) \
+         .save(os.path.join(ROOT, 'assets', 'atlas.png'), optimize=True)
+    # content hash rides in the manifest: sprites.js appends it as ?v= on the
+    # png so a fresh json can never pair with a stale cached atlas image
+    import hashlib
+    png_hash = hashlib.sha1(open(os.path.join(ROOT, 'assets', 'atlas.png'), 'rb').read()).hexdigest()[:10]
+    manifest['__v'] = png_hash
     with open(os.path.join(ROOT, 'assets', 'atlas.json'), 'w') as f:
         json.dump(manifest, f, separators=(',', ':'), sort_keys=True)
     kb = os.path.getsize(os.path.join(ROOT, 'assets', 'atlas.png')) // 1024
-    print(f'atlas {MAXW}x{H} — {len(manifest)} sprites — {kb} KB')
+    print(f'atlas {MAXW}x{H} — {len(manifest) - 1} sprites — {kb} KB — v={png_hash}')
 
 if __name__ == '__main__':
     main()

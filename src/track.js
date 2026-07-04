@@ -1,7 +1,7 @@
 /* Track building: Catmull-Rom resample, variants (mirror/reverse), zones
    (mud/ramp/sand/bridge), pickups, prerender + dressing + bridge deck. */
 import { S } from './state.js';
-import { spr, drawSpr } from './sprites.js';
+import { spr, drawSpr, terrainPattern } from './sprites.js';
 import { mulberry32 } from './rng.js';
 
 export const W = 1600, H = 900;
@@ -114,18 +114,18 @@ export function nearestIdx(x, y, hint) {
 /* Trackside dressing: theme prop sets placed deterministically outside the
    ribbon. Decor only — no collision. */
 const THEME_PROPS = [
-  ['prop_tree_pine', 'prop_fence_wood', 'prop_log_pile', 'prop_bench', 'prop_bunting_posts'],
-  ['prop_cactus', 'prop_rock_large', 'prop_barrel_hazard', 'prop_sign_slowdown', 'prop_water_tower'],
-  ['prop_tree_pine', 'prop_windmill', 'prop_corral_fence', 'prop_camper', 'prop_log_pile'],
-  ['prop_rock_large', 'prop_cactus', 'prop_sign_danger', 'prop_watchtower_wood', 'prop_barrel_hazard'],
-  ['prop_crowd_stand', 'prop_light_tower', 'prop_speaker_stack', 'prop_stage_lights', 'prop_bunting_posts'],
-  ['prop_log_pile', 'prop_porta_potty', 'prop_sign_slippery', 'prop_tree_pine', 'prop_medic_tent'],
-  ['prop_rock_large', 'prop_silo', 'prop_oil_pump', 'prop_sign_hotlaps', 'prop_tree_pine'],
-  ['prop_crowd_stand_b', 'prop_light_tower_b', 'prop_ambulances', 'prop_shipping_container', 'prop_generator_red'],
-  ['prop_crowd_stand', 'prop_girder_bridge', 'prop_light_tower', 'prop_scaffold', 'prop_stage_lights'],   // 9 Crossover
-  ['prop_windmill', 'prop_cactus', 'prop_hot_air_balloon', 'prop_corral_fence', 'prop_tube_man'],         // 10 Rallycross
-  ['prop_cactus', 'prop_rock_large', 'prop_satellite_dish', 'prop_water_tower', 'prop_sign_warning'],     // 11 Sandstorm
-  ['prop_fire_barrel', 'prop_torch', 'prop_watchtower_b', 'prop_ambulances', 'prop_sign_danger'],         // 12 Wolf's Den
+  ['prop_tree_pine', 'prop_fence_wood', 'prop_log_pile', 'prop_bench', 'prop_bunting_posts', 'prop_haybale', 'prop_billboard_wolfburn'],
+  ['prop_cactus', 'prop_rock_large', 'prop_barrel_hazard', 'prop_sign_slowdown', 'prop_water_tower', 'prop_tire_stack'],
+  ['prop_tree_pine', 'prop_windmill', 'prop_corral_fence', 'prop_camper', 'prop_log_pile', 'prop_haybale'],
+  ['prop_rock_large', 'prop_cactus', 'prop_sign_danger', 'prop_watchtower_wood', 'prop_barrel_hazard', 'prop_gate_arrow_l'],
+  ['prop_crowd_stand', 'prop_light_tower', 'prop_speaker_stack', 'prop_stage_lights', 'prop_bunting_posts', 'prop_billboard_howler', 'prop_tire_stack'],
+  ['prop_log_pile', 'prop_porta_potty', 'prop_sign_slippery', 'prop_tree_pine', 'prop_medic_tent', 'prop_puddle'],
+  ['prop_rock_large', 'prop_silo', 'prop_oil_pump', 'prop_sign_hotlaps', 'prop_tree_pine', 'prop_haybale'],
+  ['prop_crowd_stand_b', 'prop_light_tower_b', 'prop_ambulances', 'prop_shipping_container', 'prop_generator_red', 'prop_billboard_alpha', 'prop_tire_stack'],
+  ['prop_crowd_stand', 'prop_girder_bridge', 'prop_light_tower', 'prop_scaffold', 'prop_stage_lights', 'prop_billboard_howler'],   // 9 Crossover
+  ['prop_windmill', 'prop_cactus', 'prop_hot_air_balloon', 'prop_corral_fence', 'prop_tube_man', 'prop_gate_arrow_r'],             // 10 Rallycross
+  ['prop_cactus', 'prop_rock_large', 'prop_satellite_dish', 'prop_water_tower', 'prop_sign_warning', 'prop_tire_stack'],           // 11 Sandstorm
+  ['prop_fire_barrel', 'prop_torch', 'prop_watchtower_b', 'prop_ambulances', 'prop_sign_danger', 'prop_billboard_wolfburn'],       // 12 Wolf's Den
 ];
 
 function placeDressing(track, ti) {
@@ -178,12 +178,25 @@ export function drawZone(c, track, zi) {
   const z = track.def.zones[zi];
   const [a, b] = track.zoneRange(zi);
   if (z.type === 'mud') {
-    strokeSegment(c, track, a, b, track.width * 0.94, '#3f2f1d');
-    strokeSegment(c, track, a, b, track.width * 0.6, '#4e3a24', [10, 14]);
+    strokeSegment(c, track, a, b, track.width * 0.94,
+      terrainPattern(c, 'terrain_mud_a', 150) || '#3f2f1d');
+    strokeSegment(c, track, a, b, track.width * 0.6, 'rgba(78,58,36,0.5)', [10, 14]);
   } else if (z.type === 'sand') {
-    strokeSegment(c, track, a, b, track.width * 0.94, '#d9bd80');
-    strokeSegment(c, track, a, b, track.width * 0.6, '#c8ab6c', [8, 12]);
+    strokeSegment(c, track, a, b, track.width * 0.94,
+      terrainPattern(c, 'terrain_sand', 150) || '#d9bd80');
+    strokeSegment(c, track, a, b, track.width * 0.6, 'rgba(200,171,108,0.55)', [8, 12]);
   }
+}
+
+/* Ground tile choice per theme: green-ish infields get meadow, tan/desert
+   themes get sand; the theme color then tints the texture so the 12 tracks
+   keep their distinct palettes. */
+function groundTile(th) {
+  const n = parseInt(th.g1.slice(1), 16);
+  const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
+  if (g > r * 1.08 && g > b) return 'ground_meadow';
+  if (r > 140 && g > 100 && b < g * 0.85) return 'terrain_sand';
+  return 'ground_meadow';
 }
 
 export function prerenderTrack(ti) {
@@ -192,9 +205,28 @@ export function prerenderTrack(ti) {
   trackCanvas.width = W; trackCanvas.height = H;
   const c = trackCanvas.getContext('2d');
   const th = track.def.theme;
-  for (let y = 0; y < H; y += 90) for (let x = 0; x < W; x += 90) {
-    c.fillStyle = ((x + y) / 90) % 2 === 0 ? th.g1 : th.g2;
-    c.fillRect(x, y, 90, 90);
+  const groundPat = terrainPattern(c, groundTile(th), 190);
+  if (groundPat) {
+    // texture base + a theme wash so every track keeps its palette. Dark
+    // themes (Stadium GP, Ironman, Crossover, Wolf's Den) need a multiply
+    // wash — a translucent overlay of a dark color over the bright meadow
+    // tile still reads 40-60% too bright for their slate/forest palettes.
+    const gn = parseInt(th.g1.slice(1), 16);
+    const glum = ((gn >> 16) & 255) + ((gn >> 8) & 255) + (gn & 255);
+    c.fillStyle = groundPat; c.fillRect(0, 0, W, H);
+    if (glum < 320) {
+      c.globalCompositeOperation = 'multiply';
+      c.globalAlpha = 0.78; c.fillStyle = th.g1; c.fillRect(0, 0, W, H);
+      c.globalCompositeOperation = 'source-over';
+    } else {
+      c.globalAlpha = 0.34; c.fillStyle = th.g1; c.fillRect(0, 0, W, H);
+    }
+    c.globalAlpha = 1;
+  } else {
+    for (let y = 0; y < H; y += 90) for (let x = 0; x < W; x += 90) {
+      c.fillStyle = ((x + y) / 90) % 2 === 0 ? th.g1 : th.g2;
+      c.fillRect(x, y, 90, 90);
+    }
   }
   const path = new Path2D();
   path.moveTo(track.pts[0][0], track.pts[0][1]);
@@ -202,8 +234,15 @@ export function prerenderTrack(ti) {
   path.closePath();
   c.lineJoin = 'round'; c.lineCap = 'round';
   c.strokeStyle = th.edge; c.lineWidth = track.width + 18; c.stroke(path);
-  c.strokeStyle = th.dirt; c.lineWidth = track.width; c.stroke(path);
+  const dirtPat = terrainPattern(c, 'terrain_dirt_loam', 170);
+  c.strokeStyle = dirtPat || th.dirt; c.lineWidth = track.width; c.stroke(path);
+  if (dirtPat) {
+    // wash the loam toward the theme's dirt color, keep the texture
+    c.globalAlpha = 0.30; c.strokeStyle = th.dirt; c.stroke(path);
+    c.globalAlpha = 0.55;
+  }
   c.strokeStyle = th.rut; c.lineWidth = track.width * 0.42; c.setLineDash([26, 34]); c.stroke(path); c.setLineDash([]);
+  c.globalAlpha = 1;
 
   // static zones (shifting ones draw at runtime)
   for (let zi = 0; zi < track.def.zones.length; zi++) {
@@ -234,6 +273,11 @@ export function prerenderTrack(ti) {
     c.fillRect(q, -12 + s * 12, 16, 12);
   }
   c.restore();
+  // SKYWOLF start arch at the line — world-space upright like every other
+  // elevation-view prop (rotating with the line flips it on some tracks)
+  if (spr('prop_start_arch')) {
+    drawSpr(c, 'prop_start_arch', p0[0], p0[1] - 8, track.width + 34, 0, 0);
+  }
 
   // dressing sprites baked into the prerender — zero per-frame cost
   for (const d of placeDressing(track, ti)) {

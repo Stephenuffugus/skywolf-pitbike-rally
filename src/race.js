@@ -12,6 +12,11 @@ import { saveNow } from './save.js';
 import { applyRaceWear, setsCompleted } from './shop.js';
 import { mulberry32, dayKey } from './rng.js';
 
+/* AI paints come from the same cosmetics palette as the player so the
+   top-down sprite strips (one per paint id) cover everyone; first three
+   ids not taken by the player. Falls back to these hexes only if a paint
+   id is missing from cosmetics.json. */
+const AI_PAINT_PREFS = ['orange', 'purple', 'mint', 'red', 'blue', 'yellow'];
 const AI_COLORS = ['#e4952f', '#7f56c9', '#3fb4c9'];
 const AI_NAMES = ['Dusty', 'Rico', 'Mags'];
 const GHOST_HZ = 10;
@@ -82,6 +87,7 @@ export function startRace(ti, variant, opts) {
     });
     if (k === 0) {
       bike.isAI = false; bike.name = 'You';
+      bike.paint = G.color;
       bike.color = DATA.cosmetics.colors.find(c => c.id === G.color).hex; bike.plate = G.plate;
       bike.stats = st; bike.nitro = st.charges;
       bike.lapStream = [];
@@ -90,7 +96,11 @@ export function startRace(ti, variant, opts) {
       const base = DATA.tracks[ti].ai;
       const skill = base + j * 0.035 + Math.random() * 0.02;
       const aiUp = Math.min(1, ti / 11);
-      bike.isAI = true; bike.skill = skill; bike.name = AI_NAMES[j]; bike.color = AI_COLORS[j]; bike.plate = [11, 23, 42][j];
+      const aiPaints = AI_PAINT_PREFS.filter(p => p !== G.color);
+      const paintCol = DATA.cosmetics.colors.find(c => c.id === aiPaints[j]);
+      bike.isAI = true; bike.skill = skill; bike.name = AI_NAMES[j];
+      bike.paint = aiPaints[j];
+      bike.color = paintCol ? paintCol.hex : AI_COLORS[j]; bike.plate = [11, 23, 42][j];
       bike.stats = {
         top: 285 + 130 * aiUp * skill, accel: 190 + 110 * aiUp * skill,
         steer: 2.55 + 0.75 * aiUp, grip: 0.16 * aiUp, land: 0.6 + 0.3 * aiUp,

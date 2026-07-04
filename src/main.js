@@ -2,7 +2,7 @@
 import { S } from './state.js';
 import { loadData } from './data.js';
 import { loadSave } from './save.js';
-import { loadAtlas } from './sprites.js';
+import { loadAtlas, loadTerrain } from './sprites.js';
 import { bindUI, setScreen } from './ui.js';
 import { bindInput, applyPlayerInput } from './input.js';
 import { updateRace } from './race.js';
@@ -12,7 +12,11 @@ import { startRace } from './race.js';
 async function boot() {
   await loadData();
   loadSave();
-  try { await loadAtlas(); } catch (e) { console.warn('atlas failed to load — procedural fallback', e); }
+  // parallel: terrain never depends on the atlas, and both gate the prerender
+  await Promise.all([
+    loadAtlas().catch(e => console.warn('atlas failed to load — procedural fallback', e)),
+    loadTerrain().catch(e => console.warn('terrain tiles failed — flat colors', e)),
+  ]);
   bindUI();
   bindInput();
   resize();

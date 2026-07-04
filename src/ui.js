@@ -11,6 +11,18 @@ import { VARIANTS } from './track.js';
 const screens = ['menu', 'tracks', 'garage', 'race', 'results'];
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' };
 
+/* wave 0704 art: medal PNGs (emoji fallback if the file is missing) and
+   part-slot icons. Slot keys differ from icon names in three places. */
+function medalImg(m, cls) {
+  return '<img class="' + cls + '" src="assets/art/ui/ui_medal_' + m + '.png" alt="' + m +
+    '" onerror="this.replaceWith(\'' + MEDAL_ICON[m] + '\')">';
+}
+const PART_ICON_NAME = { tires: 'tire', susp: 'forks', gears: 'sprocket' };
+function partIcon(slot, cls) {
+  const n = PART_ICON_NAME[slot] || slot;
+  return '<img class="' + cls + '" src="assets/art/ui/ui_part_' + n + '.png" alt="" onerror="this.remove()">';
+}
+
 /* The delivered bike art is green; approximate the chosen paint with a CSS
    hue shift until tint-mask art lands (see docs/DESIGN.md §Art). */
 const PAINT_FILTER = {
@@ -113,7 +125,7 @@ export function renderTracks() {
       const isFeat = feat && feat.trackIndex === ti;
       const variantChips = VARIANTS.map(v => {
         const key = configKey(ti, v.id);
-        const medals = (G.medals[key] || []).map(m => MEDAL_ICON[m]).join('');
+        const medals = (G.medals[key] || []).map(m => medalImg(m, 'medal-chip')).join('');
         const best = G.best[key];
         const featHere = isFeat && feat.variant === v.id;
         return '<button class="vbtn' + (featHere ? ' feat' : '') + '" data-ti="' + ti + '" data-v="' + v.id + '" ' +
@@ -158,7 +170,7 @@ function partCard(part, opts) {
     if (wear > 0) priceLine += ' · ' + wear + '% worn';
   }
   b.innerHTML =
-    '<span class="pname">' + part.name + (part.r !== 'c' ? ' <em class="rtag r-' + part.r + '">' + S.DATA.parts.rarityLabels[part.r] + '</em>' : '') + '</span>' +
+    '<span class="pname">' + partIcon(part.slot, 'picon') + part.name + (part.r !== 'c' ? ' <em class="rtag r-' + part.r + '">' + S.DATA.parts.rarityLabels[part.r] + '</em>' : '') + '</span>' +
     wearLine +
     '<span class="pprice">' + priceLine + '</span>' +
     (owned && wear > 0 ? '<span class="pfix" data-id="' + part.id + '">🔧 REPAIR ' + repairCost(part) + '⚙</span>' : '');
@@ -223,7 +235,7 @@ export function renderGarage() {
   // permanent stock by slot
   for (const slot of DATA.parts.slots) {
     const box = document.createElement('div'); box.className = 'slot-box';
-    box.innerHTML = '<div class="slot-title">' + DATA.parts.slotLabels[slot] + '</div>';
+    box.innerHTML = '<div class="slot-title">' + partIcon(slot, 'slot-icon') + DATA.parts.slotLabels[slot] + '</div>';
     const row = document.createElement('div'); row.className = 'slot-row';
     for (const part of DATA.parts.parts.filter(p => p.slot === slot && (!p.rot || S.G.owned.has(p.id)))) {
       row.appendChild(partCard(part));
@@ -278,7 +290,7 @@ export function showResults(r) {
     ['Best lap bonus', r.bestLapBonus],
   ];
   if (r.golden) rows.push(['✨ Golden Sprocket', r.golden]);
-  for (const m of r.medals) rows.push([MEDAL_ICON[m] + ' ' + m.toUpperCase() + ' medal — ' + t.name, S.DATA.economy.medals[m]]);
+  for (const m of r.medals) rows.push([medalImg(m, 'medal-row') + ' ' + m.toUpperCase() + ' medal — ' + t.name, S.DATA.economy.medals[m]]);
   if (r.setPay) rows.push(['Race-set completion bonus', r.setPay]);
   const tb = document.getElementById('res-rows');
   tb.innerHTML = rows.map(x => '<div class="rrow"><span>' + x[0] + '</span><b>+' + x[1].toLocaleString() + ' ⚙</b></div>').join('')
