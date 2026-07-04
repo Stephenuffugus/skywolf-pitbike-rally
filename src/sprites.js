@@ -14,9 +14,22 @@ export const ART_V = '20260704c';
 export async function loadAtlas() {
   const r = await fetch('assets/atlas.json?v=' + ART_V);
   map = await r.json();
+  // .bin, not .png: the portal host's image optimizer RESIZES pngs >1600px
+  // (served 2048x1895 back as 1600x1480 — every rect wrong, bikes invisible).
+  // fetch->blob dodges every image transformer; the type is forced so all
+  // browsers decode the blob as png.
+  const rb = await fetch('assets/atlas.bin?v=' + (map.__v || ART_V));
+  const blob = new Blob([await rb.arrayBuffer()], { type: 'image/png' });
   img = new Image();
-  img.src = 'assets/atlas.png?v=' + (map.__v || ART_V);
+  img.src = URL.createObjectURL(blob);
   await img.decode();
+  if (map.__w && (img.width !== map.__w || img.height !== map.__h)) {
+    // something between us and the player transformed the image — refuse it
+    // (procedural fallback) instead of drawing garbage rects
+    console.warn('atlas dims ' + img.width + 'x' + img.height + ' != manifest ' +
+      map.__w + 'x' + map.__h + ' — image was transformed in transit; procedural fallback');
+    img = null; map = {};
+  }
   return map;
 }
 

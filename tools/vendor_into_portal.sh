@@ -17,7 +17,7 @@ cp "$SRC"/css/game.css "$DST"/css/
 cp "$SRC"/src/*.js "$DST"/src-$HASH/
 cp "$SRC"/data/*.json "$DST"/data/
 cp "$SRC"/data/tracks/*.json "$DST"/data/tracks/
-cp "$SRC"/assets/atlas.png "$SRC"/assets/atlas.json "$SRC"/assets/favicon.png "$DST"/assets/
+cp "$SRC"/assets/atlas.bin "$SRC"/assets/atlas.json "$SRC"/assets/favicon.png "$DST"/assets/
 
 cp "$SRC"/assets/art/bike/bike_ride_f01.png \
    "$SRC"/assets/art/bike/bikeview_ride_a.png \

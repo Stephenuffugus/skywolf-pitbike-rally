@@ -86,15 +86,22 @@ def main():
     # sprites (verified frame-by-frame vs truecolor) and ~4-5x smaller
     atlas.quantize(colors=256, method=Image.FASTOCTREE, dither=Image.FLOYDSTEINBERG) \
          .save(os.path.join(ROOT, 'assets', 'atlas.png'), optimize=True)
-    # content hash rides in the manifest: sprites.js appends it as ?v= on the
-    # png so a fresh json can never pair with a stale cached atlas image
-    import hashlib
+    # atlas.bin = byte-identical copy served under a non-image extension: the
+    # portal host's image optimizer RESIZES pngs over 1600px (live atlas came
+    # back 1600x1480 -> every sprite rect wrong, bikes invisible). Game loads
+    # the .bin via fetch->blob; .png stays for humans/tools.
+    import hashlib, shutil
+    shutil.copyfile(os.path.join(ROOT, 'assets', 'atlas.png'),
+                    os.path.join(ROOT, 'assets', 'atlas.bin'))
     png_hash = hashlib.sha1(open(os.path.join(ROOT, 'assets', 'atlas.png'), 'rb').read()).hexdigest()[:10]
     manifest['__v'] = png_hash
+    # true pixel dims: sprites.js refuses a transformed/resized atlas image
+    manifest['__w'] = MAXW
+    manifest['__h'] = H
     with open(os.path.join(ROOT, 'assets', 'atlas.json'), 'w') as f:
         json.dump(manifest, f, separators=(',', ':'), sort_keys=True)
     kb = os.path.getsize(os.path.join(ROOT, 'assets', 'atlas.png')) // 1024
-    print(f'atlas {MAXW}x{H} — {len(manifest) - 1} sprites — {kb} KB — v={png_hash}')
+    print(f'atlas {MAXW}x{H} — {len(manifest) - 3} sprites — {kb} KB — v={png_hash}')
 
 if __name__ == '__main__':
     main()
