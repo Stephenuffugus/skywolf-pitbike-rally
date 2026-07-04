@@ -147,15 +147,12 @@ canvas#game{ position:fixed; inset:0; display:block; }
 .ctl-btn{ position:absolute; border-radius:50%; border:none; font-weight:900; font-style:italic;
   text-transform:uppercase; cursor:pointer; touch-action:none; }
 .ctl-btn.pressed{ filter:brightness(1.25); transform:scale(0.94); }
-#btn-gas{ right:calc(20px + env(safe-area-inset-right)); bottom:calc(24px + env(safe-area-inset-bottom));
-  width:118px; height:118px; background:radial-gradient(circle at 35% 30%, #ffe27a, var(--plate) 60%);
-  color:var(--ink); font-size:22px; box-shadow:0 6px 0 #a8890f; }
-#btn-brake{ right:calc(154px + env(safe-area-inset-right)); bottom:calc(24px + env(safe-area-inset-bottom));
-  width:84px; height:84px; background:radial-gradient(circle at 35% 30%, #ff8a76, #e23b2e 60%);
-  color:#fff; font-size:15px; box-shadow:0 5px 0 #8f221a; }
-#btn-nitro{ right:calc(34px + env(safe-area-inset-right)); bottom:calc(158px + env(safe-area-inset-bottom));
-  width:88px; height:88px; background:radial-gradient(circle at 35% 30%, #a5e2ff, var(--nitro) 60%);
-  color:var(--ink); font-size:15px; box-shadow:0 5px 0 #2b7ea6; }
+#btn-gas{ right:calc(12px + env(safe-area-inset-right)); bottom:calc(12px + env(safe-area-inset-bottom));
+  width:92px; height:92px; background:radial-gradient(circle at 35% 30%, #ffe27a, var(--plate) 60%);
+  color:var(--ink); font-size:18px; box-shadow:0 5px 0 #a8890f; opacity:0.82; }
+#btn-nitro{ right:calc(20px + env(safe-area-inset-right)); bottom:calc(116px + env(safe-area-inset-bottom));
+  width:72px; height:72px; background:radial-gradient(circle at 35% 30%, #a5e2ff, var(--nitro) 60%);
+  color:var(--ink); font-size:13px; box-shadow:0 4px 0 #2b7ea6; opacity:0.82; }
 
 /* ---- pause overlay ---- */
 #pause-ov{ position:fixed; inset:0; display:none; z-index:40; background:rgba(12,13,16,0.78);

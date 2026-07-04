@@ -61,7 +61,7 @@ export function bindInput() {
     el.addEventListener('mousedown', down); el.addEventListener('mouseup', up); el.addEventListener('mouseleave', () => up());
   }
   bindBtn('btn-gas', () => input.gas = true, () => input.gas = false);
-  bindBtn('btn-brake', () => input.brake = true, () => input.brake = false);
+  // touch has no brake button (it covered the track); brake stays on keyboard
   bindBtn('btn-nitro', fireNitro);
 
   addEventListener('keydown', e => {

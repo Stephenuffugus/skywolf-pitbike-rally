@@ -21,6 +21,19 @@ const PAINT_FILTER = {
   mint: 'hue-rotate(55deg) saturate(0.9)',
 };
 
+/* True fullscreen on phones: entering a race is a tap (user gesture), so we
+   can hide the browser chrome then. Android/desktop only — iOS Safari has no
+   element fullscreen on iPhone. Never inside the portal frame. */
+export function tryAutoFullscreen() {
+  if (window.SWS_EMBED || document.fullscreenElement) return;
+  if (!window.matchMedia('(pointer: coarse)').matches) return;
+  const el = document.documentElement;
+  if (!el.requestFullscreen) return;
+  el.requestFullscreen().then(() => {
+    if (screen.orientation && screen.orientation.lock) screen.orientation.lock('landscape').catch(() => { });
+  }).catch(() => { });
+}
+
 function applyPaintToHeroes() {
   const f = PAINT_FILTER[S.G.color] || 'none';
   for (const id of ['menu-hero', 'garage-hero', 'res-hero']) {
@@ -61,7 +74,7 @@ export function renderTracks() {
       '<span class="tname">' + t.name + '</span>' +
       '<span class="tmeta">' + t.laps + ' laps · purse ×' + t.purse.toFixed(1) + '</span>' +
       '<span class="tbest">' + (best ? 'BEST ' + fmtTime(best / 1000) : 'NO TIME SET') + '</span>';
-    card.addEventListener('click', () => { audioInit(); startRace(i); });
+    card.addEventListener('click', () => { audioInit(); tryAutoFullscreen(); startRace(i); });
     wrap.appendChild(card);
   });
   document.getElementById('tracks-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
@@ -163,7 +176,7 @@ export function showResults(r) {
 
 export function bindUI() {
   const G = S.G;
-  document.getElementById('btn-race').addEventListener('click', () => { audioInit(); setScreen('tracks'); });
+  document.getElementById('btn-race').addEventListener('click', () => { audioInit(); tryAutoFullscreen(); setScreen('tracks'); });
   document.getElementById('btn-garage').addEventListener('click', () => setScreen('garage'));
   document.getElementById('tracks-back').addEventListener('click', () => setScreen('menu'));
   document.getElementById('garage-back').addEventListener('click', () => setScreen('menu'));
