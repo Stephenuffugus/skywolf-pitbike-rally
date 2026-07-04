@@ -11,12 +11,13 @@ export function makeBike(opts) {
     nitro: 0, nitroT: 0, cash: 0, style: 0, air: 0,
     lapStart: 0, bestLap: Infinity,
     isAI: false, skill: 1, look: 26, name: 'You', color: '#e23b2e', plate: 7,
-    lastRampF: -1, dustT: 0,
+    lastRampF: -1, dustT: 0, landT: 0,
   }, opts);
 }
 
 export function updateBike(b, dt) {
   const { track, race } = S;
+  if (b.landT > 0) b.landT -= dt;
   if (b.finished) { b.throttle = 0.4; } // cruise after finish
   const st = b.stats;
   const zone = track.zoneAt(track.frac(b.idx));
@@ -69,6 +70,7 @@ export function updateBike(b, dt) {
       b.z = 0;
       const hard = b.vz < -330 && st.land < 0.6;
       if (hard) b.speed *= (0.55 + st.land * 0.35);
+      b.landT = 0.28;                     // suspension-compressed sprite pose
       spawnFx('fx_land_poof_strip', b.x, b.y + 6, { size: 34, life: 0.4 });
       if (!b.isAI) {
         const pts = Math.round(b.air * 22 + (hard ? 0 : 12));

@@ -26,6 +26,9 @@ STRIP_FRAMES = {
     # top-down ride strips (wave 0704): 3-frame bob cycle per paint
     **{'trackbike_%s_strip' % p: 3 for p in
        ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'white', 'black', 'mint']},
+    # pose strips (wave3): f0 air, f1 land, f2 lean left, f3 lean right
+    **{'trackbike_%s_poses' % p: 4 for p in
+       ['red', 'blue', 'green', 'yellow', 'orange', 'purple', 'white', 'black', 'mint']},
 }
 
 def clean_magenta(im):

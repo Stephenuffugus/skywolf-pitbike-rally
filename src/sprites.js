@@ -50,7 +50,9 @@ const terrains = {};
 const patternCache = {};
 
 export async function loadTerrain() {
-  const names = ['terrain_dirt_loam', 'terrain_mud_a', 'terrain_sand', 'ground_meadow'];
+  const names = ['terrain_dirt_loam', 'terrain_mud_a', 'terrain_sand', 'ground_meadow',
+                 'ground_desert', 'ground_prairie', 'ground_canyon', 'ground_stadium',
+                 'ground_swamp', 'ground_ridge', 'ground_storm'];
   await Promise.all(names.map(n => new Promise(res => {
     const im = new Image();
     im.onload = () => { terrains[n] = im; res(); };

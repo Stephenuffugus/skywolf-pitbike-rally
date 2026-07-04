@@ -25,7 +25,7 @@ anywhere in the dust or spray"** to smoke/dust prompts.
 
 ---
 
-## WAVE A — remaining top-down poses (finishes the on-track animation set)
+## WAVE A — ✅ DELIVERED + WIRED 2026-07-04 (drop 2) — do not redo
 
 **A1 · bike_air (1 frame):**
 > Same exact bike and rider, same top-down camera as this image, new pose: airborne over a jump, both wheels off the ground, rider standing on the pegs with knees bent, bike level. [STYLE]
@@ -43,7 +43,7 @@ anywhere in the dust or spray"** to smoke/dust prompts.
 
 ---
 
-## WAVE B — the 7 remaining biome ground tiles (each track gets its own infield)
+## WAVE B — ✅ DELIVERED + WIRED 2026-07-04 (drop 2) — do not redo
 
 Template — swap [TEXTURE]:
 > A seamless repeating game texture, square image, top-down view: [TEXTURE]. Chunky flat cartoon colors, subtle detail, low contrast, no objects, no text, no vignette — the edges must tile perfectly when repeated.
@@ -60,7 +60,7 @@ Template — swap [TEXTURE]:
 
 ---
 
-## WAVE C — shop content (Phase 3; do AFTER A + B)
+## WAVE C — shop content (Phase 3) — THE ONLY WAVE LEFT
 
 **C1 · "RUST BUCKET" bike skin** — the ride strip pose set (4-frame ride strip
 plus A1-A4 poses) with this bike description instead:

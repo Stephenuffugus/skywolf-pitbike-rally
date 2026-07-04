@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-07-04 — v1.3 pose sprites + 7 biome grounds (drop 2)
+- Bike pose sprites on-track: airborne (standing on pegs), landing
+  (suspension compressed, 0.28s after touchdown), lean left/right (banked
+  art +-14deg, picked by steer sign) — per paint, physics-driven.
+- Every track gets its own infield: desert, prairie, canyon, stadium,
+  swamp, ridge twilight, storm mud join meadow/sand. Per-track mapping
+  with lighter theme washes (multiply on dark themes).
+- bike_downed_side cut + stashed (crash mechanic is Phase 3).
+- Stress test: all 12 tracks error-free; 58-60fps, 55 under all-bikes-nitro
+  FX spam, 31+ at 4x CPU throttle; full race->results->payout flow verified.
+
 ## 2026-07-04 — v1.2 full art integration (Stephen's wave 0704 drop)
 - **Top-down sprite bikes ON-TRACK** — the Phase-1 blocker is gone. 3-frame
   ride-bob strips per paint (9 colors, green-keyed from Stephen's approved

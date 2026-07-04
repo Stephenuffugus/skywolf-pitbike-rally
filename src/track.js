@@ -188,9 +188,23 @@ export function drawZone(c, track, zi) {
   }
 }
 
-/* Ground tile choice per theme: green-ish infields get meadow, tan/desert
-   themes get sand; the theme color then tints the texture so the 12 tracks
-   keep their distinct palettes. */
+/* Per-track infield tile (wave3 biome grounds). Falls back to the hue
+   heuristic for any future track without an entry. */
+const GROUND_BY_TRACK = [
+  'ground_meadow',   // 01 Rookie Oval
+  'ground_desert',   // 02 Hairpin Gulch
+  'ground_meadow',   // 03 Peanut Flats
+  'ground_canyon',   // 04 Snake Canyon
+  'ground_stadium',  // 05 Stadium GP
+  'ground_swamp',    // 06 Mud Bowl
+  'ground_prairie',  // 07 Ridge Runner
+  'ground_storm',    // 08 Ironman Circuit
+  'ground_swamp',    // 09 Crossover Junction
+  'ground_prairie',  // 10 Rallycross Switch
+  'ground_desert',   // 11 Sandstorm Sweep
+  'ground_ridge',    // 12 Wolf's Den
+];
+
 function groundTile(th) {
   const n = parseInt(th.g1.slice(1), 16);
   const r = (n >> 16) & 255, g = (n >> 8) & 255, b = n & 255;
@@ -205,21 +219,20 @@ export function prerenderTrack(ti) {
   trackCanvas.width = W; trackCanvas.height = H;
   const c = trackCanvas.getContext('2d');
   const th = track.def.theme;
-  const groundPat = terrainPattern(c, groundTile(th), 190);
+  const groundPat = terrainPattern(c, GROUND_BY_TRACK[ti] || groundTile(th), 190)
+    || terrainPattern(c, groundTile(th), 190);
   if (groundPat) {
-    // texture base + a theme wash so every track keeps its palette. Dark
-    // themes (Stadium GP, Ironman, Crossover, Wolf's Den) need a multiply
-    // wash — a translucent overlay of a dark color over the bright meadow
-    // tile still reads 40-60% too bright for their slate/forest palettes.
+    // per-biome tiles already sit close to their theme palettes, so the
+    // wash is light: multiply for dark themes, plain overlay for bright.
     const gn = parseInt(th.g1.slice(1), 16);
     const glum = ((gn >> 16) & 255) + ((gn >> 8) & 255) + (gn & 255);
     c.fillStyle = groundPat; c.fillRect(0, 0, W, H);
     if (glum < 320) {
       c.globalCompositeOperation = 'multiply';
-      c.globalAlpha = 0.78; c.fillStyle = th.g1; c.fillRect(0, 0, W, H);
+      c.globalAlpha = 0.45; c.fillStyle = th.g1; c.fillRect(0, 0, W, H);
       c.globalCompositeOperation = 'source-over';
     } else {
-      c.globalAlpha = 0.34; c.fillStyle = th.g1; c.fillRect(0, 0, W, H);
+      c.globalAlpha = 0.25; c.fillStyle = th.g1; c.fillRect(0, 0, W, H);
     }
     c.globalAlpha = 1;
   } else {

@@ -65,7 +65,16 @@ function drawBikeSprite(c, b, name) {
     const nf = Math.floor(race.t * 18) % 3;
     drawSpr(c, 'fx_nitro_flame_strip', -27 - Math.random() * 3, 0, 21 + Math.random() * 5, 0, nf);
   }
-  drawSpr(c, name, 0, 0, 42 * scale, 0, f);
+  // pose frames (wave3): f0 air, f1 land, f2 lean left, f3 lean right
+  const poses = name.replace('_strip', '_poses');
+  let pi = -1;
+  if (frameCount(poses) === 4) {
+    if (b.z > 5) pi = 0;
+    else if (b.landT > 0) pi = 1;
+    else if (Math.abs(b.steer) > 0.5 && b.speed > 110) pi = b.steer > 0 ? 3 : 2;
+  }
+  if (pi >= 0) drawSpr(c, poses, 0, 0, 42 * scale, 0, pi);
+  else drawSpr(c, name, 0, 0, 42 * scale, 0, f);
   c.restore();
 
   // floating plate number
