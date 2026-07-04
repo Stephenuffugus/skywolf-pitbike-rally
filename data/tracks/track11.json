@@ -1,0 +1,108 @@
+{
+ "name": "Sandstorm Sweep",
+ "laps": 5,
+ "width": 102,
+ "purse": 2.8,
+ "ai": 0.935,
+ "theme": {
+  "g1": "#c9a25f",
+  "g2": "#c19a57",
+  "dirt": "#b98e55",
+  "edge": "#6e4a24",
+  "rut": "#a67a45"
+ },
+ "pts": [
+  [
+   180,
+   600
+  ],
+  [
+   300,
+   300
+  ],
+  [
+   600,
+   180
+  ],
+  [
+   1000,
+   150
+  ],
+  [
+   1350,
+   230
+  ],
+  [
+   1480,
+   450
+  ],
+  [
+   1380,
+   680
+  ],
+  [
+   1050,
+   770
+  ],
+  [
+   650,
+   740
+  ],
+  [
+   350,
+   730
+  ]
+ ],
+ "zones": [
+  {
+   "a": 0.2,
+   "b": 0.25,
+   "type": "sand",
+   "shift": true
+  },
+  {
+   "a": 0.5,
+   "b": 0.56,
+   "type": "sand",
+   "shift": true
+  },
+  {
+   "a": 0.78,
+   "b": 0.83,
+   "type": "sand",
+   "shift": true
+  },
+  {
+   "a": 0.35,
+   "b": 0.375,
+   "type": "ramp"
+  }
+ ],
+ "pickups": [
+  {
+   "t": 0.12,
+   "side": 0.3,
+   "type": "cash"
+  },
+  {
+   "t": 0.42,
+   "side": -0.3,
+   "type": "nitro"
+  },
+  {
+   "t": 0.65,
+   "side": 0,
+   "type": "cash"
+  },
+  {
+   "t": 0.9,
+   "side": 0.3,
+   "type": "cash"
+  }
+ ],
+ "targetLap": 18.5,
+ "special": {
+  "type": "noSand",
+  "label": "Complete a lap touching zero sand"
+ }
+}

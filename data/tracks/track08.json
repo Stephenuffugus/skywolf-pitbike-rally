@@ -126,5 +126,10 @@
    "side": 0.3,
    "type": "nitro"
   }
- ]
+ ],
+ "targetLap": 27,
+ "special": {
+  "type": "comeback",
+  "label": "Win after starting the final lap in 4th"
+ }
 }

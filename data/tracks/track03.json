@@ -91,5 +91,11 @@
    "side": 0.3,
    "type": "cash"
   }
- ]
+ ],
+ "targetLap": 18,
+ "special": {
+  "type": "cleanJumps",
+  "n": 4,
+  "label": "Land 4 clean jumps in one race"
+ }
 }

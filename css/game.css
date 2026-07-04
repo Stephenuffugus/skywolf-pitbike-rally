@@ -198,3 +198,36 @@ canvas#game{ position:fixed; inset:0; display:block; }
   .menu-foot{ margin-top:10px; }
   .sws-exit{ margin-top:4px; padding:8px; }
 }
+
+/* ---- Phase 2: circuits, medals, rarity, wear ---- */
+.circuit-head{ grid-column:1/-1; display:flex; align-items:baseline; gap:12px; margin:8px 0 2px; }
+.circuit-name{ color:var(--plate); font-size:20px; }
+.circuit-head.locked .circuit-name{ color:#5c5f6a; }
+.circuit-sub{ font-size:12px; color:#8b8e99; }
+.feat-tag{ color:var(--burn); font-size:11px; letter-spacing:1px; }
+.tspecial{ font-size:11.5px; color:#b8a86b; }
+.vrow{ display:flex; gap:6px; margin-top:8px; }
+.vbtn{ flex:1; min-height:48px; background:#111318; border:2px solid #34363e; border-radius:10px;
+  color:var(--dust); font-weight:900; font-style:italic; font-size:13px; cursor:pointer;
+  display:flex; flex-direction:column; align-items:center; justify-content:center; gap:1px; }
+.vbtn:active{ border-color:var(--plate); }
+.vbtn.feat{ border-color:var(--burn); box-shadow:0 0 10px rgba(240,112,32,.35); }
+.vbtn i{ font-style:normal; font-size:10px; letter-spacing:-1px; }
+.rot-box{ background:linear-gradient(180deg, rgba(242,201,40,0.05), transparent); border:1px dashed #4a4436;
+  border-radius:12px; padding:8px 10px 4px; }
+.rot-count{ font-weight:400; font-style:normal; text-transform:none; color:#8b8e99; font-size:11.5px; margin-left:8px; }
+.fix-all{ width:100%; margin:2px 0 12px; color:var(--grip); border-color:#3d4a3a; }
+.part .rtag{ font-style:normal; font-weight:800; font-size:9.5px; padding:1px 5px; border-radius:6px; margin-left:4px; vertical-align:1px; }
+.rtag.r-u{ background:#1e3a24; color:#8ef07f; }
+.rtag.r-r{ background:#15304a; color:#5fc9ff; }
+.rtag.r-l{ background:#3a2c10; color:var(--plate); }
+.part.r-r{ border-color:#2b567e; }
+.part.r-l{ border-color:#8a7420; }
+.part.r-r.equipped, .part.r-l.equipped{ border-color:var(--plate); }
+.pwear{ display:block; height:5px; background:#111318; border-radius:99px; overflow:hidden; margin:5px 0 2px; border:1px solid #2a2d35; }
+.pwear i{ display:block; height:100%; background:#3f7a35; }
+.pwear i.mid{ background:#c8a13a; }
+.pwear i.bad{ background:#c0392b; }
+.pfix{ display:block; margin-top:5px; font-size:11px; font-weight:900; color:var(--nitro);
+  border:1px solid #2b567e; border-radius:8px; padding:5px 6px; text-align:center; }
+.rrow.fee b{ color:#ff8a76; }

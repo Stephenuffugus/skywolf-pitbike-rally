@@ -22,6 +22,10 @@ export function updateBike(b, dt) {
   const zone = track.zoneAt(track.frac(b.idx));
   const near = nearestIdx(b.x, b.y, b.idx);
   const off = near.dist > track.width / 2;
+  if (!b.isAI && b.z <= 0) {
+    if (off) b.m_offtrack = true;
+    if (zone === 'sand') b.m_sandThisLap = true;
+  }
 
   // target speed
   let top = st.top, accel = st.accel;
@@ -29,19 +33,25 @@ export function updateBike(b, dt) {
   let envMul = 1;
   if (b.z <= 0) {
     if (off)                envMul = 0.50 + st.grip * 1.1;
-    else if (zone === 'mud') envMul = 0.60 + st.grip * 1.2;
+    else if (zone === 'mud' || zone === 'sand') envMul = 0.60 + st.grip * 1.2;
   }
   const target = b.throttle * top * envMul;
 
   if (b.speed < target) b.speed = Math.min(target, b.speed + accel * (b.z > 0 ? 0.25 : 1) * dt);
   else b.speed = Math.max(target, b.speed - (off ? 330 : 240) * dt);
-  if (b.brake > 0 && b.z <= 0) b.speed = Math.max(0, b.speed - 520 * b.brake * dt);
+  if (b.brake > 0 && b.z <= 0) b.speed = Math.max(0, b.speed - 520 * (1 + (st.brake || 0) * 0.5) * b.brake * dt);
   if (b.throttle === 0 && b.brake === 0) b.speed = Math.max(0, b.speed - 140 * dt);
 
   // steering (reduced in air, scaled with speed)
   const spdF = Math.min(1, b.speed / 140 + 0.15) * (0.6 + 0.4 * Math.min(1, 320 / Math.max(80, b.speed)));
   const airF = b.z > 0 ? 0.25 : 1;
   b.heading += b.steer * st.steer * spdF * airF * dt;
+
+  // corner scrub: hard steering bleeds speed; better brakes hold the line
+  if (b.z <= 0 && b.speed > 120) {
+    const hold = 1 - Math.min(0.6, (st.brake || 0) * 0.6);
+    b.speed -= Math.abs(b.steer) * b.speed * 0.055 * hold * dt;
+  }
 
   // ramps
   if (b.z <= 0 && zone === 'ramp' && b.speed > 140) {
@@ -63,6 +73,8 @@ export function updateBike(b, dt) {
       if (!b.isAI) {
         const pts = Math.round(b.air * 22 + (hard ? 0 : 12));
         b.style += pts;
+        b.m_airtime = (b.m_airtime || 0) + b.air;
+        if (!hard) b.m_cleanJumps = (b.m_cleanJumps || 0) + 1;
         popup(b.x, b.y - 30, (hard ? 'ROUGH ' : 'CLEAN +') + pts, hard ? '#ff8866' : '#ffd23f');
       }
       b.vz = 0;
@@ -74,7 +86,7 @@ export function updateBike(b, dt) {
   if (b.z <= 0 && b.speed > 90 && b.dustT <= 0) {
     const back = 16;
     const dx = b.x - Math.cos(b.heading) * back, dy = b.y - Math.sin(b.heading) * back;
-    if (zone === 'mud') spawnFx('fx_mud_splat_strip', dx, dy, { size: 24, life: 0.5 });
+    if (zone === 'mud' || zone === 'sand') spawnFx('fx_mud_splat_strip', dx, dy, { size: 24, life: 0.5 });
     else spawnFx('fx_dust_puff_strip', dx, dy, { size: 20 + b.speed * 0.02, life: 0.5 });
     b.dustT = b.isAI ? 0.22 : 0.12;
   }
@@ -93,8 +105,16 @@ export function updateBike(b, dt) {
     b.lap++;
     if (!b.isAI) {
       const lapT = race.t - b.lapStart;
-      if (b.lap >= 2 && lapT < b.bestLap) b.bestLap = lapT;
+      if (b.lap >= 2 && lapT < b.bestLap) { b.bestLap = lapT; b.bestLapStream = b.lapStream; }
+      b.lapStream = [];
+      if (b.lap >= 2 && !b.m_sandThisLap) b.m_cleanSandLap = true;
+      b.m_sandThisLap = false;
+      if (b.lap === race.laps) {
+        // entering the final lap — remember position for the comeback medal
+        b.m_finalLapPos = racePositions().indexOf(b) + 1;
+      }
       b.lapStart = race.t;
+      if (track.hasShiftZones) track.shiftZones(b.lap);
     }
     if (b.lap > race.laps) {
       b.finished = true; b.finishTime = race.t;
@@ -103,6 +123,17 @@ export function updateBike(b, dt) {
     }
   } else if (prevIdx < 70 && b.idx > N - 70) {
     b.lap = Math.max(0, b.lap - 1); // crossed backwards
+  }
+
+  // golden sprocket — player only, one per race
+  if (!b.isAI && b.z <= 0 && race.golden && race.golden.active) {
+    const g = race.golden;
+    if ((g.x - b.x) ** 2 + (g.y - b.y) ** 2 < 30 * 30) {
+      g.active = false;
+      b.goldenCash = (b.goldenCash || 0) + S.DATA.economy.golden.value;
+      popup(g.x, g.y, '+' + S.DATA.economy.golden.value + '⚙ GOLDEN!', '#ffd23f');
+      spawnFx('fx_gold_sparkle_strip', g.x, g.y, { size: 56, life: 0.6 });
+    }
   }
 
   // pickups (player + AI can take nitro; only player takes cash)
@@ -115,13 +146,16 @@ export function updateBike(b, dt) {
           if (!b.isAI) {
             const EC = S.DATA.economy;
             const amt = EC.pickupCash[0] + Math.floor(Math.random() * (EC.pickupCash[1] - EC.pickupCash[0]));
-            b.cash += amt; popup(p.x, p.y, '+' + amt + '⚙', '#8ef07f');
+            b.cash += amt; b.m_pickupsTaken = (b.m_pickupsTaken || 0) + 1;
+            popup(p.x, p.y, '+' + amt + '⚙', '#8ef07f');
             spawnFx('fx_collect_burst_strip', p.x, p.y, { size: 40, life: 0.4 });
             p.active = false; p.timer = 9;
           }
         } else {
-          b.nitro = Math.min(4, b.nitro + 1);
+          b.nitro = Math.min(6, b.nitro + 1);
           if (!b.isAI) {
+            b.m_nitroGrabs = (b.m_nitroGrabs || 0) + 1;
+            b.m_pickupsTaken = (b.m_pickupsTaken || 0) + 1;
             popup(p.x, p.y, '+NITRO', '#5fc9ff');
             spawnFx('fx_collect_burst_strip', p.x, p.y, { size: 40, life: 0.4 });
           }
@@ -166,12 +200,19 @@ export function bikeCollisions() {
   for (let i = 0; i < bikes.length; i++) for (let j = i + 1; j < bikes.length; j++) {
     const a = bikes[i], c = bikes[j];
     if (a.z > 0 || c.z > 0) continue;
+    if (S.track.onBridge && S.track.onBridge(a.idx) !== S.track.onBridge(c.idx)) continue;
     const dx = c.x - a.x, dy = c.y - a.y, d = Math.hypot(dx, dy);
     if (d > 0 && d < 26) {
       const push = (26 - d) / 2, ux = dx / d, uy = dy / d;
       a.x -= ux * push; a.y -= uy * push; c.x += ux * push; c.y += uy * push;
       a.speed *= 0.97; c.speed *= 0.97;
       const rel = Math.abs(a.speed - c.speed);
+      if (rel > 150) {
+        // hard hit: the slower bike takes an extra knock, armor absorbs it
+        const slow = a.speed < c.speed ? a : c;
+        const tough = (slow.stats && slow.stats.tough) || 0;
+        slow.speed *= 0.82 + Math.min(0.15, tough * 0.12);
+      }
       if (rel > 120) spawnFx('fx_spark_hit_strip', (a.x + c.x) / 2, (a.y + c.y) / 2, { size: 26, life: 0.3 });
     }
   }

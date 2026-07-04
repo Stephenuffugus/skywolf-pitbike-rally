@@ -88,5 +88,11 @@
    "side": 0,
    "type": "cash"
   }
- ]
+ ],
+ "targetLap": 16.5,
+ "special": {
+  "type": "airtime",
+  "n": 3,
+  "label": "Total 3.0s+ airtime in one race"
+ }
 }

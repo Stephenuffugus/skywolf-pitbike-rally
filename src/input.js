@@ -82,7 +82,8 @@ function fireNitro() {
   const p = S.bikes[0];
   const race = S.race;
   if (p && race.started && !race.over && p.nitro > 0 && p.nitroT <= 0) {
-    p.nitro--; p.nitroT = 1.6; popup(p.x, p.y - 24, 'NITRO!', '#5fc9ff'); audioNitro();
+    p.nitro--; p.nitroT = 1.6; p.m_usedNitro = true;
+    popup(p.x, p.y - 24, 'NITRO!', '#5fc9ff'); audioNitro();
   }
 }
 

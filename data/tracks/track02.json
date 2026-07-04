@@ -93,5 +93,10 @@
    "side": -0.3,
    "type": "nitro"
   }
- ]
+ ],
+ "targetLap": 21.5,
+ "special": {
+  "type": "noOfftrack",
+  "label": "Never leave the track"
+ }
 }

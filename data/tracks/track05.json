@@ -112,5 +112,11 @@
    "side": 0.3,
    "type": "cash"
   }
- ]
+ ],
+ "targetLap": 19.5,
+ "special": {
+  "type": "style",
+  "n": 250,
+  "label": "Score 250+ style points"
+ }
 }

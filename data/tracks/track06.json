@@ -96,5 +96,10 @@
    "side": 0,
    "type": "cash"
   }
- ]
+ ],
+ "targetLap": 20.5,
+ "special": {
+  "type": "winNoNitro",
+  "label": "Win without using nitro"
+ }
 }

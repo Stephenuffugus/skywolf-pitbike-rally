@@ -1,17 +1,30 @@
 {
-  "place": [
-    1500,
-    1000,
-    600,
-    300
-  ],
+  "place": [1500, 1000, 600, 300],
   "bestLap": 250,
   "styleRate": 2,
   "styleCap": 500,
-  "pickupCash": [
-    100,
-    300
-  ],
+  "pickupCash": [100, 300],
   "startWallet": 2500,
-  "dailyFirstWin": 500
+  "dailyFirstWin": 500,
+
+  "wear": {
+    "perRace": 3,
+    "perLap": 1.2,
+    "maxStatLoss": 0.3,
+    "repairPerTier": 60
+  },
+  "shop": {
+    "rotationSlots": 3,
+    "racesPerSet": 4,
+    "setBonus": 1000
+  },
+  "circuits": [
+    { "id": "amateur", "name": "Amateur",    "tracks": [0, 1, 2, 3],   "fee": 0,    "unlock": null },
+    { "id": "pro",     "name": "Pro",        "tracks": [4, 5, 6, 7],   "fee": 300,  "unlock": { "circuit": "amateur", "medals": 6 } },
+    { "id": "ironman", "name": "Ironman",    "tracks": [8, 9, 10],     "fee": 800,  "unlock": { "circuit": "pro", "medals": 12 } },
+    { "id": "wolfsden","name": "Wolf's Den", "tracks": [11],           "fee": 1500, "unlock": { "circuit": "ironman", "medals": 6 } }
+  ],
+  "medals": { "gold": 400, "silver": 300, "bronze": 250 },
+  "featured": { "purseMult": 2 },
+  "golden": { "chance": 0.35, "value": 1000, "afterLap": 1 }
 }

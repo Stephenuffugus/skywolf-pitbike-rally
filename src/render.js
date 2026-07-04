@@ -4,11 +4,13 @@ import { S } from './state.js';
 import { W, H } from './track.js';
 import { drawSpr, frameCount } from './sprites.js';
 import { drawFx } from './fx.js';
+import { drawZone } from './track.js';
 
 export const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 export let trackCanvas = null;
-export function setTrackCanvas(c) { trackCanvas = c; }
+export let deckCanvas = null;
+export function setTrackCanvas(c, deck) { trackCanvas = c; deckCanvas = deck || null; }
 
 export let view = { s: 1, ox: 0, oy: 0 };
 
@@ -137,6 +139,30 @@ function drawBike(c, b) {
   c.restore();
 }
 
+function drawGhost(ctx) {
+  const { race } = S;
+  const g = race.ghost;
+  if (!g || !race.started || race.over) return;
+  const lapMs = g.ms;
+  const t = ((race.t * 1000) % lapMs) / 1000;
+  const fi = t * g.hz;
+  const n = g.pts.length / 3;
+  const i0 = Math.floor(fi) % n, i1 = (i0 + 1) % n;
+  const u = fi - Math.floor(fi);
+  const x = g.pts[i0 * 3] + (g.pts[i1 * 3] - g.pts[i0 * 3]) * u;
+  const y = g.pts[i0 * 3 + 1] + (g.pts[i1 * 3 + 1] - g.pts[i0 * 3 + 1]) * u;
+  const h = g.pts[i0 * 3 + 2];
+  ctx.save();
+  ctx.globalAlpha = 0.32;
+  ctx.translate(x, y);
+  ctx.rotate(h);
+  ctx.fillStyle = '#cfd6ff';
+  ctx.strokeStyle = '#8b93c9'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.roundRect(-14, -5, 28, 10, 5); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.arc(4, 0, 4, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+}
+
 export function render() {
   const { race, track, bikes } = S;
   ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -145,6 +171,16 @@ export function render() {
   if (!track || (!race.active && S.currentScreen !== 'race')) return;
   ctx.setTransform(view.s, 0, 0, view.s, view.ox, view.oy);
   if (trackCanvas) ctx.drawImage(trackCanvas, 0, 0);
+
+  // shifting zones (Sandstorm Sweep) draw live over the prerender
+  if (track.hasShiftZones) {
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    for (let zi = 0; zi < track.def.zones.length; zi++) {
+      if (track.def.zones[zi].shift) drawZone(ctx, track, zi);
+    }
+  }
+
+  drawGhost(ctx);
 
   // pickups — atlas sprites (coin spin, nitro can bob), procedural fallback
   const haveArt = frameCount('pickup_coin_f01') > 0;
@@ -174,9 +210,27 @@ export function render() {
     }
   }
 
-  // bikes sorted by y then z for layering
+  // golden sprocket — oversized pulsing coin
+  if (race.golden && race.golden.active) {
+    const g = race.golden;
+    const pulse = 1 + Math.sin(race.t * 6) * 0.12;
+    ctx.save();
+    ctx.shadowColor = '#ffd23f'; ctx.shadowBlur = 18;
+    const f = (Math.floor(race.t * 8) % 4) + 1;
+    if (frameCount('pickup_coin_f01')) drawSpr(ctx, 'pickup_coin_f0' + f, g.x, g.y, 40 * pulse, 0, 0);
+    else { ctx.fillStyle = '#ffd23f'; ctx.beginPath(); ctx.arc(g.x, g.y, 16 * pulse, 0, Math.PI * 2); ctx.fill(); }
+    ctx.restore();
+  }
+
+  // bikes sorted by y then z for layering; bridge riders draw above the deck
   const drawOrder = bikes.slice().sort((a, b) => (a.y + a.z) - (b.y + b.z));
-  for (const b of drawOrder) drawBike(ctx, b);
+  if (deckCanvas && track.onBridge) {
+    for (const b of drawOrder) { if (!track.onBridge(b.idx)) drawBike(ctx, b); }
+    ctx.drawImage(deckCanvas, 0, 0);
+    for (const b of drawOrder) { if (track.onBridge(b.idx)) drawBike(ctx, b); }
+  } else {
+    for (const b of drawOrder) drawBike(ctx, b);
+  }
 
   // particles above bikes
   drawFx(ctx);

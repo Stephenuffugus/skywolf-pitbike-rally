@@ -73,5 +73,10 @@
    "side": 0.2,
    "type": "cash"
   }
- ]
+ ],
+ "targetLap": 16,
+ "special": {
+  "type": "allPickups",
+  "label": "Collect every pickup in one race"
+ }
 }
