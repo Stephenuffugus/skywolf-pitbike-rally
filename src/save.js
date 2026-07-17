@@ -24,6 +24,7 @@ function defaults() {
     trackIndex: 0, variant: 0,
     muted: false,
     sunbeamDay: '', sunbeamEarnedToday: 0,
+    dailyLast: '', dailyStreak: 0, title: '',
   };
 }
 

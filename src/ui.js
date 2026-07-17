@@ -2,7 +2,7 @@
    garage (10 slots, wear/repair, rotating stock), results.
    Circular import with race.js is fine — all cross-calls happen at runtime. */
 import { S, bikeStats, statPct, fmtTime, partById, configKey, circuitUnlocked, circuitMedalCount } from './state.js';
-import { startRace, dailyFeatured } from './race.js';
+import { startRace, dailyFeatured, installDailyTrack, dailyTrackIndex, dailyNumber, titleFor, nextTitle } from './race.js';
 import { saveNow } from './save.js';
 import { audioInit, audioRace } from './audio.js';
 import { partWear, repairCost, repairPart, repairAll, repairAllCost, rotatingStock, racesUntilRestock } from './shop.js';
@@ -103,6 +103,30 @@ export function renderTracks() {
   wrap.innerHTML = '';
   const unlocked = unlockedTrackList();
   const feat = dailyFeatured(unlocked);
+
+  // ── DAILY RALLY — generated fresh every day, same track for everyone ──
+  {
+    const G2 = S.G;
+    const today = new Date().toISOString().slice(0, 10);
+    const doneToday = G2.dailyLast === today;
+    const nt = nextTitle(G2.dailyStreak || 0);
+    const streakLine = (G2.dailyStreak ? ('🔥 streak ' + G2.dailyStreak) : 'start a streak')
+      + (G2.title ? (' · ' + G2.title.toUpperCase()) : '')
+      + (nt ? (' · next title at ' + nt.at + ': ' + nt.name) : '');
+    const card = document.createElement('div');
+    card.className = 'track-card';
+    card.style.cssText = 'border:1px solid rgba(255,205,90,0.65);box-shadow:0 0 14px rgba(255,205,90,0.18);';
+    card.innerHTML = '<div class="track-name banner" style="color:#ffd76a;">📅 DAILY RALLY #' + dailyNumber()
+      + (doneToday ? ' ✓' : '') + '</div>'
+      + '<div class="track-sub" style="opacity:.85;">A brand new track every day, the same for every rider. Finish it to grow your streak.</div>'
+      + '<div class="track-sub" style="color:#ffd76a;">' + streakLine + '</div>'
+      + '<button class="btn race-btn" data-daily="1" style="min-height:48px;">RACE THE DAILY</button>';
+    card.querySelector('[data-daily]').addEventListener('click', () => {
+      const ti = installDailyTrack();
+      startRace(ti, 0, {});
+    });
+    wrap.appendChild(card);
+  }
 
   for (const circuit of S.DATA.economy.circuits) {
     const open = circuitUnlocked(circuit);
@@ -314,6 +338,7 @@ export function showResults(r) {
     ['Best lap bonus', r.bestLapBonus],
   ];
   if (r.golden) rows.push(['✨ Golden Sprocket', r.golden]);
+  if (r.daily) rows.push(['🔥 Daily streak ' + r.daily.streak + (r.daily.newTitle ? (' — NEW TITLE: ' + r.daily.newTitle.toUpperCase()) : (r.daily.title ? (' · ' + r.daily.title) : '')), 0]);
   for (const m of r.medals) rows.push([medalImg(m, 'medal-row') + ' ' + m.toUpperCase() + ' medal — ' + t.name, S.DATA.economy.medals[m]]);
   if (r.setPay) rows.push(['Race-set completion bonus', r.setPay]);
   const tb = document.getElementById('res-rows');

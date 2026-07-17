@@ -1,72 +1,540 @@
 {
-  "slots": ["engine", "exhaust", "carb", "tires", "susp", "gears", "frame", "brakes", "nitro", "armor"],
-  "slotLabels": {
-    "engine": "Engine", "exhaust": "Exhaust", "carb": "Carb / Fuel",
-    "tires": "Tires", "susp": "Suspension", "gears": "Gearing",
-    "frame": "Frame", "brakes": "Brakes", "nitro": "Nitro tank", "armor": "Armor"
+ "slots": [
+  "engine",
+  "exhaust",
+  "carb",
+  "tires",
+  "susp",
+  "gears",
+  "frame",
+  "brakes",
+  "nitro",
+  "armor"
+ ],
+ "slotLabels": {
+  "engine": "Engine",
+  "exhaust": "Exhaust",
+  "carb": "Carb / Fuel",
+  "tires": "Tires",
+  "susp": "Suspension",
+  "gears": "Gearing",
+  "frame": "Frame",
+  "brakes": "Brakes",
+  "nitro": "Nitro tank",
+  "armor": "Armor"
+ },
+ "rarityLabels": {
+  "c": "Common",
+  "u": "Uncommon",
+  "r": "Rare",
+  "l": "Legendary"
+ },
+ "parts": [
+  {
+   "slot": "engine",
+   "id": "eng0",
+   "name": "Stock 50cc",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "top": 0,
+   "accel": 0
   },
-  "rarityLabels": { "c": "Common", "u": "Uncommon", "r": "Rare", "l": "Legendary" },
-  "parts": [
-    { "slot": "engine", "id": "eng0", "name": "Stock 50cc",       "tier": 0, "r": "c", "price": 0,    "top": 0,   "accel": 0 },
-    { "slot": "engine", "id": "eng1", "name": "88cc Kit",         "tier": 1, "r": "c", "price": 1200, "top": 40,  "accel": 35 },
-    { "slot": "engine", "id": "eng2", "name": "125 Big Bore",     "tier": 2, "r": "u", "price": 3000, "top": 85,  "accel": 70 },
-    { "slot": "engine", "id": "eng3", "name": "190 Race Motor",   "tier": 3, "r": "r", "price": 6500, "top": 140, "accel": 115 },
-    { "slot": "engine", "id": "engX1","name": "Howler 160 Kit",   "tier": 3, "r": "r", "price": 5200, "top": 110, "accel": 95, "rot": true },
-    { "slot": "engine", "id": "engX2","name": "Wolfburn 212 Stroker","tier": 4, "r": "l", "price": 9800, "top": 165, "accel": 130, "rot": true },
-
-    { "slot": "exhaust", "id": "exh0", "name": "Stock Pipe",      "tier": 0, "r": "c", "price": 0,    "accel": 0 },
-    { "slot": "exhaust", "id": "exh1", "name": "Slip-On Pipe",    "tier": 1, "r": "c", "price": 500,  "accel": 15 },
-    { "slot": "exhaust", "id": "exh2", "name": "Full System",     "tier": 2, "r": "u", "price": 1400, "accel": 30, "top": 10 },
-    { "slot": "exhaust", "id": "exh3", "name": "Race Ti System",  "tier": 3, "r": "r", "price": 3200, "accel": 45, "top": 20 },
-    { "slot": "exhaust", "id": "exhX1","name": "Howler Screamer", "tier": 4, "r": "l", "price": 6400, "accel": 65, "top": 25, "rot": true },
-
-    { "slot": "carb", "id": "crb0", "name": "Stock Carb",         "tier": 0, "r": "c", "price": 0,    "accel": 0 },
-    { "slot": "carb", "id": "crb1", "name": "Jetted Carb",        "tier": 1, "r": "c", "price": 450,  "accel": 12 },
-    { "slot": "carb", "id": "crb2", "name": "Pumper Carb",        "tier": 2, "r": "u", "price": 1200, "accel": 25 },
-    { "slot": "carb", "id": "crb3", "name": "Race FI Kit",        "tier": 3, "r": "r", "price": 2800, "accel": 40 },
-    { "slot": "carb", "id": "crbX1","name": "Wolfburn Injector",  "tier": 4, "r": "l", "price": 5900, "accel": 60, "top": 15, "rot": true },
-
-    { "slot": "tires", "id": "tir0", "name": "Stock Knobby",      "tier": 0, "r": "c", "price": 0,    "steer": 0,    "grip": 0 },
-    { "slot": "tires", "id": "tir1", "name": "Soft Compound",     "tier": 1, "r": "c", "price": 800,  "steer": 0.25, "grip": 0.06 },
-    { "slot": "tires", "id": "tir2", "name": "Paddle Pro",        "tier": 2, "r": "u", "price": 2000, "steer": 0.5,  "grip": 0.14 },
-    { "slot": "tires", "id": "tir3", "name": "Race Hybrid",       "tier": 3, "r": "r", "price": 4500, "steer": 0.85, "grip": 0.22 },
-    { "slot": "tires", "id": "tirX1","name": "Alpha Traction Claws","tier": 4, "r": "r", "price": 5600, "steer": 0.7, "grip": 0.3, "rot": true },
-    { "slot": "tires", "id": "tirX2","name": "Werewolf Paws",     "tier": 4, "r": "l", "price": 8800, "steer": 1.0,  "grip": 0.34, "rot": true },
-
-    { "slot": "susp", "id": "sus0", "name": "Stock Forks",        "tier": 0, "r": "c", "price": 0,    "land": 0 },
-    { "slot": "susp", "id": "sus1", "name": "Sport Setup",        "tier": 1, "r": "c", "price": 900,  "land": 0.35 },
-    { "slot": "susp", "id": "sus2", "name": "Race Setup",         "tier": 2, "r": "u", "price": 2400, "land": 0.65 },
-    { "slot": "susp", "id": "sus3", "name": "Factory Works",      "tier": 3, "r": "r", "price": 5200, "land": 1.0 },
-    { "slot": "susp", "id": "susX1","name": "Moonshock Works",    "tier": 4, "r": "l", "price": 8200, "land": 1.2, "rot": true },
-
-    { "slot": "gears", "id": "grs0", "name": "Balanced Gearing",  "tier": 0, "r": "c", "price": 0,    "top": 0,   "accel": 0 },
-    { "slot": "gears", "id": "grs1", "name": "Short Gearing",     "tier": 1, "r": "c", "price": 700,  "top": -20, "accel": 45 },
-    { "slot": "gears", "id": "grs2", "name": "Tall Gearing",      "tier": 2, "r": "u", "price": 700,  "top": 45,  "accel": -20 },
-    { "slot": "gears", "id": "grs3", "name": "Close-Ratio Race",  "tier": 3, "r": "r", "price": 1800, "top": 25,  "accel": 25 },
-    { "slot": "gears", "id": "grsX1","name": "Howler CR Pro",     "tier": 4, "r": "r", "price": 3600, "top": 35,  "accel": 35, "rot": true },
-
-    { "slot": "frame", "id": "frm0", "name": "Stock Frame",       "tier": 0, "r": "c", "price": 0,    "steer": 0,    "tough": 0 },
-    { "slot": "frame", "id": "frm1", "name": "Chromoly Frame",    "tier": 1, "r": "c", "price": 900,  "steer": 0.1,  "tough": 0.1 },
-    { "slot": "frame", "id": "frm2", "name": "Alloy Frame",       "tier": 2, "r": "u", "price": 2200, "steer": 0.2,  "tough": 0.2 },
-    { "slot": "frame", "id": "frm3", "name": "Carbon Frame",      "tier": 3, "r": "r", "price": 4800, "steer": 0.35, "tough": 0.25 },
-    { "slot": "frame", "id": "frmX1","name": "Wolfframe X",       "tier": 4, "r": "l", "price": 7900, "steer": 0.45, "tough": 0.35, "rot": true },
-
-    { "slot": "brakes", "id": "brk0", "name": "Stock Brakes",     "tier": 0, "r": "c", "price": 0,    "brake": 0 },
-    { "slot": "brakes", "id": "brk1", "name": "Sport Pads",       "tier": 1, "r": "c", "price": 400,  "brake": 0.2 },
-    { "slot": "brakes", "id": "brk2", "name": "Wave Rotors",      "tier": 2, "r": "u", "price": 1100, "brake": 0.45 },
-    { "slot": "brakes", "id": "brk3", "name": "Race Hydraulics",  "tier": 3, "r": "r", "price": 2500, "brake": 0.7 },
-    { "slot": "brakes", "id": "brkX1","name": "Howler Stoppers",  "tier": 4, "r": "r", "price": 4200, "brake": 1.0, "rot": true },
-
-    { "slot": "nitro", "id": "nit0", "name": "Single Bottle",     "tier": 0, "r": "c", "price": 0,    "charges": 1 },
-    { "slot": "nitro", "id": "nit1", "name": "Twin Bottles",      "tier": 1, "r": "c", "price": 1000, "charges": 2 },
-    { "slot": "nitro", "id": "nit2", "name": "Race Rack",         "tier": 2, "r": "u", "price": 2600, "charges": 3 },
-    { "slot": "nitro", "id": "nit3", "name": "Ironman Rack",      "tier": 3, "r": "r", "price": 5500, "charges": 4 },
-    { "slot": "nitro", "id": "nitX1","name": "Lunar Rack",        "tier": 4, "r": "l", "price": 8600, "charges": 5, "rot": true },
-
-    { "slot": "armor", "id": "arm0", "name": "No Armor",          "tier": 0, "r": "c", "price": 0,    "tough": 0 },
-    { "slot": "armor", "id": "arm1", "name": "Bark Guards",       "tier": 1, "r": "c", "price": 600,  "tough": 0.25 },
-    { "slot": "armor", "id": "arm2", "name": "Crash Cage",        "tier": 2, "r": "u", "price": 1600, "tough": 0.5 },
-    { "slot": "armor", "id": "arm3", "name": "Full Armor Kit",    "tier": 3, "r": "r", "price": 3400, "tough": 0.8 },
-    { "slot": "armor", "id": "armX1","name": "Wolfhide Plating",  "tier": 4, "r": "l", "price": 6800, "tough": 1.1, "rot": true }
-  ]
+  {
+   "slot": "engine",
+   "id": "eng1",
+   "name": "88cc Kit",
+   "tier": 1,
+   "r": "c",
+   "price": 3000,
+   "top": 40,
+   "accel": 35
+  },
+  {
+   "slot": "engine",
+   "id": "eng2",
+   "name": "125 Big Bore",
+   "tier": 2,
+   "r": "u",
+   "price": 7500,
+   "top": 85,
+   "accel": 70
+  },
+  {
+   "slot": "engine",
+   "id": "eng3",
+   "name": "190 Race Motor",
+   "tier": 3,
+   "r": "r",
+   "price": 16250,
+   "top": 140,
+   "accel": 115
+  },
+  {
+   "slot": "engine",
+   "id": "engX1",
+   "name": "Howler 160 Kit",
+   "tier": 3,
+   "r": "r",
+   "price": 13000,
+   "top": 110,
+   "accel": 95,
+   "rot": true
+  },
+  {
+   "slot": "engine",
+   "id": "engX2",
+   "name": "Wolfburn 212 Stroker",
+   "tier": 4,
+   "r": "l",
+   "price": 24500,
+   "top": 165,
+   "accel": 130,
+   "rot": true
+  },
+  {
+   "slot": "exhaust",
+   "id": "exh0",
+   "name": "Stock Pipe",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "accel": 0
+  },
+  {
+   "slot": "exhaust",
+   "id": "exh1",
+   "name": "Slip-On Pipe",
+   "tier": 1,
+   "r": "c",
+   "price": 1250,
+   "accel": 15
+  },
+  {
+   "slot": "exhaust",
+   "id": "exh2",
+   "name": "Full System",
+   "tier": 2,
+   "r": "u",
+   "price": 3500,
+   "accel": 30,
+   "top": 10
+  },
+  {
+   "slot": "exhaust",
+   "id": "exh3",
+   "name": "Race Ti System",
+   "tier": 3,
+   "r": "r",
+   "price": 8000,
+   "accel": 45,
+   "top": 20
+  },
+  {
+   "slot": "exhaust",
+   "id": "exhX1",
+   "name": "Howler Screamer",
+   "tier": 4,
+   "r": "l",
+   "price": 16000,
+   "accel": 65,
+   "top": 25,
+   "rot": true
+  },
+  {
+   "slot": "carb",
+   "id": "crb0",
+   "name": "Stock Carb",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "accel": 0
+  },
+  {
+   "slot": "carb",
+   "id": "crb1",
+   "name": "Jetted Carb",
+   "tier": 1,
+   "r": "c",
+   "price": 1100,
+   "accel": 12
+  },
+  {
+   "slot": "carb",
+   "id": "crb2",
+   "name": "Pumper Carb",
+   "tier": 2,
+   "r": "u",
+   "price": 3000,
+   "accel": 25
+  },
+  {
+   "slot": "carb",
+   "id": "crb3",
+   "name": "Race FI Kit",
+   "tier": 3,
+   "r": "r",
+   "price": 7000,
+   "accel": 40
+  },
+  {
+   "slot": "carb",
+   "id": "crbX1",
+   "name": "Wolfburn Injector",
+   "tier": 4,
+   "r": "l",
+   "price": 14750,
+   "accel": 60,
+   "top": 15,
+   "rot": true
+  },
+  {
+   "slot": "tires",
+   "id": "tir0",
+   "name": "Stock Knobby",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "steer": 0,
+   "grip": 0
+  },
+  {
+   "slot": "tires",
+   "id": "tir1",
+   "name": "Soft Compound",
+   "tier": 1,
+   "r": "c",
+   "price": 2000,
+   "steer": 0.25,
+   "grip": 0.06
+  },
+  {
+   "slot": "tires",
+   "id": "tir2",
+   "name": "Paddle Pro",
+   "tier": 2,
+   "r": "u",
+   "price": 5000,
+   "steer": 0.5,
+   "grip": 0.14
+  },
+  {
+   "slot": "tires",
+   "id": "tir3",
+   "name": "Race Hybrid",
+   "tier": 3,
+   "r": "r",
+   "price": 11250,
+   "steer": 0.85,
+   "grip": 0.22
+  },
+  {
+   "slot": "tires",
+   "id": "tirX1",
+   "name": "Alpha Traction Claws",
+   "tier": 4,
+   "r": "r",
+   "price": 14000,
+   "steer": 0.7,
+   "grip": 0.3,
+   "rot": true
+  },
+  {
+   "slot": "tires",
+   "id": "tirX2",
+   "name": "Werewolf Paws",
+   "tier": 4,
+   "r": "l",
+   "price": 22000,
+   "steer": 1.0,
+   "grip": 0.34,
+   "rot": true
+  },
+  {
+   "slot": "susp",
+   "id": "sus0",
+   "name": "Stock Forks",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "land": 0
+  },
+  {
+   "slot": "susp",
+   "id": "sus1",
+   "name": "Sport Setup",
+   "tier": 1,
+   "r": "c",
+   "price": 2250,
+   "land": 0.35
+  },
+  {
+   "slot": "susp",
+   "id": "sus2",
+   "name": "Race Setup",
+   "tier": 2,
+   "r": "u",
+   "price": 6000,
+   "land": 0.65
+  },
+  {
+   "slot": "susp",
+   "id": "sus3",
+   "name": "Factory Works",
+   "tier": 3,
+   "r": "r",
+   "price": 13000,
+   "land": 1.0
+  },
+  {
+   "slot": "susp",
+   "id": "susX1",
+   "name": "Moonshock Works",
+   "tier": 4,
+   "r": "l",
+   "price": 20500,
+   "land": 1.2,
+   "rot": true
+  },
+  {
+   "slot": "gears",
+   "id": "grs0",
+   "name": "Balanced Gearing",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "top": 0,
+   "accel": 0
+  },
+  {
+   "slot": "gears",
+   "id": "grs1",
+   "name": "Short Gearing",
+   "tier": 1,
+   "r": "c",
+   "price": 1750,
+   "top": -20,
+   "accel": 45
+  },
+  {
+   "slot": "gears",
+   "id": "grs2",
+   "name": "Tall Gearing",
+   "tier": 2,
+   "r": "u",
+   "price": 1750,
+   "top": 45,
+   "accel": -20
+  },
+  {
+   "slot": "gears",
+   "id": "grs3",
+   "name": "Close-Ratio Race",
+   "tier": 3,
+   "r": "r",
+   "price": 4500,
+   "top": 25,
+   "accel": 25
+  },
+  {
+   "slot": "gears",
+   "id": "grsX1",
+   "name": "Howler CR Pro",
+   "tier": 4,
+   "r": "r",
+   "price": 9000,
+   "top": 35,
+   "accel": 35,
+   "rot": true
+  },
+  {
+   "slot": "frame",
+   "id": "frm0",
+   "name": "Stock Frame",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "steer": 0,
+   "tough": 0
+  },
+  {
+   "slot": "frame",
+   "id": "frm1",
+   "name": "Chromoly Frame",
+   "tier": 1,
+   "r": "c",
+   "price": 2250,
+   "steer": 0.1,
+   "tough": 0.1
+  },
+  {
+   "slot": "frame",
+   "id": "frm2",
+   "name": "Alloy Frame",
+   "tier": 2,
+   "r": "u",
+   "price": 5500,
+   "steer": 0.2,
+   "tough": 0.2
+  },
+  {
+   "slot": "frame",
+   "id": "frm3",
+   "name": "Carbon Frame",
+   "tier": 3,
+   "r": "r",
+   "price": 12000,
+   "steer": 0.35,
+   "tough": 0.25
+  },
+  {
+   "slot": "frame",
+   "id": "frmX1",
+   "name": "Wolfframe X",
+   "tier": 4,
+   "r": "l",
+   "price": 19750,
+   "steer": 0.45,
+   "tough": 0.35,
+   "rot": true
+  },
+  {
+   "slot": "brakes",
+   "id": "brk0",
+   "name": "Stock Brakes",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "brake": 0
+  },
+  {
+   "slot": "brakes",
+   "id": "brk1",
+   "name": "Sport Pads",
+   "tier": 1,
+   "r": "c",
+   "price": 1000,
+   "brake": 0.2
+  },
+  {
+   "slot": "brakes",
+   "id": "brk2",
+   "name": "Wave Rotors",
+   "tier": 2,
+   "r": "u",
+   "price": 2750,
+   "brake": 0.45
+  },
+  {
+   "slot": "brakes",
+   "id": "brk3",
+   "name": "Race Hydraulics",
+   "tier": 3,
+   "r": "r",
+   "price": 6250,
+   "brake": 0.7
+  },
+  {
+   "slot": "brakes",
+   "id": "brkX1",
+   "name": "Howler Stoppers",
+   "tier": 4,
+   "r": "r",
+   "price": 10500,
+   "brake": 1.0,
+   "rot": true
+  },
+  {
+   "slot": "nitro",
+   "id": "nit0",
+   "name": "Single Bottle",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "charges": 1
+  },
+  {
+   "slot": "nitro",
+   "id": "nit1",
+   "name": "Twin Bottles",
+   "tier": 1,
+   "r": "c",
+   "price": 2500,
+   "charges": 2
+  },
+  {
+   "slot": "nitro",
+   "id": "nit2",
+   "name": "Race Rack",
+   "tier": 2,
+   "r": "u",
+   "price": 6500,
+   "charges": 3
+  },
+  {
+   "slot": "nitro",
+   "id": "nit3",
+   "name": "Ironman Rack",
+   "tier": 3,
+   "r": "r",
+   "price": 13750,
+   "charges": 4
+  },
+  {
+   "slot": "nitro",
+   "id": "nitX1",
+   "name": "Lunar Rack",
+   "tier": 4,
+   "r": "l",
+   "price": 21500,
+   "charges": 5,
+   "rot": true
+  },
+  {
+   "slot": "armor",
+   "id": "arm0",
+   "name": "No Armor",
+   "tier": 0,
+   "r": "c",
+   "price": 0,
+   "tough": 0
+  },
+  {
+   "slot": "armor",
+   "id": "arm1",
+   "name": "Bark Guards",
+   "tier": 1,
+   "r": "c",
+   "price": 1500,
+   "tough": 0.25
+  },
+  {
+   "slot": "armor",
+   "id": "arm2",
+   "name": "Crash Cage",
+   "tier": 2,
+   "r": "u",
+   "price": 4000,
+   "tough": 0.5
+  },
+  {
+   "slot": "armor",
+   "id": "arm3",
+   "name": "Full Armor Kit",
+   "tier": 3,
+   "r": "r",
+   "price": 8500,
+   "tough": 0.8
+  },
+  {
+   "slot": "armor",
+   "id": "armX1",
+   "name": "Wolfhide Plating",
+   "tier": 4,
+   "r": "l",
+   "price": 17000,
+   "tough": 1.1,
+   "rot": true
+  }
+ ]
 }

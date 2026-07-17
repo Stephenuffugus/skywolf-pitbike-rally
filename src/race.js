@@ -31,6 +31,58 @@ export function dailyFeatured(unlockedTracks) {
   return { trackIndex: ti, variant };
 }
 
+/* ═══ DAILY RALLY — a brand-new generated track every 24 hours, identical for
+   every player (seeded from the calendar day). Completing it grows a streak;
+   streak milestones award TITLES shown on the menu and results. ═══ */
+export function dailyNumber() {
+  const d = new Date();
+  return Math.floor((Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()) - Date.UTC(2026, 0, 1)) / 86400000) + 1;
+}
+export const DAILY_TITLES = [
+  [2, 'Regular'], [3, 'Local Hero'], [5, 'Privateer'], [7, 'Week Warrior'],
+  [10, 'Dirt Devotee'], [14, 'Fortnight Flyer'], [21, 'Track Legend'], [30, 'Rally Immortal'],
+];
+export function titleFor(streak) {
+  let t = ''; for (const [n, name] of DAILY_TITLES) if (streak >= n) t = name; return t;
+}
+export function nextTitle(streak) {
+  for (const [n, name] of DAILY_TITLES) if (streak < n) return { at: n, name };
+  return null;
+}
+export function generateDailyTrack() {
+  const rng = mulberry32((dayKey() ^ 0xDA117) >>> 0);
+  const n = 8 + Math.floor(rng() * 4);
+  const cx = 800, cy = 460, pts = [];
+  for (let i = 0; i < n; i++) {
+    const a = (i / n) * Math.PI * 2 - Math.PI / 2;
+    const jr = 0.7 + rng() * 0.5;
+    pts.push([Math.round(cx + Math.cos(a) * 640 * jr), Math.round(cy + Math.sin(a) * 300 * jr)]);
+  }
+  const zones = [];
+  const nz = 2 + Math.floor(rng() * 3);
+  for (let z = 0; z < nz; z++) { const a = (z + 0.2 + rng() * 0.5) / nz; zones.push({ a: +a.toFixed(3), b: +(a + 0.03).toFixed(3), type: 'ramp' }); }
+  const pickups = [];
+  const np = 3 + Math.floor(rng() * 3);
+  for (let k = 0; k < np; k++) pickups.push({ t: +(((k + 0.4 + rng() * 0.4) / np) % 1).toFixed(3), side: +(rng() * 1.2 - 0.6).toFixed(2), type: rng() < 0.6 ? 'cash' : 'nitro' });
+  const themes = S.DATA.tracks.slice(0, 12).map(t => t.theme).filter(Boolean);
+  return {
+    name: 'Daily Rally #' + dailyNumber(), laps: 3,
+    width: Math.round(104 + rng() * 26), purse: 2,
+    ai: 0.82 + rng() * 0.06,
+    theme: themes.length ? themes[Math.floor(rng() * themes.length)] : undefined,
+    pts, zones, pickups,
+    targetLap: 18, special: { type: 'allPickups', label: 'Collect every pickup in one race' },
+    daily: true,
+  };
+}
+/* the daily lives at a fixed virtual index past the authored tracks */
+export function dailyTrackIndex() { return 12; }
+export function installDailyTrack() {
+  const ti = dailyTrackIndex();
+  S.DATA.tracks[ti] = generateDailyTrack();
+  return ti;
+}
+
 export function isFeatured(ti, variant, unlockedTracks) {
   const f = dailyFeatured(unlockedTracks);
   return !!f && f.trackIndex === ti && f.variant === (variant || 0);
@@ -282,10 +334,24 @@ export function finishRace() {
 
   applyRaceWear(race.laps);
   earnSunbeams(place);
+  // Daily Rally streak: finishing today's daily (any place) keeps the chain alive
+  let dailyInfo = null;
+  if (def.daily && p.finished) {
+    const today = new Date().toISOString().slice(0, 10);
+    if (G.dailyLast !== today) {
+      const yd = new Date(Date.now() - 864e5).toISOString().slice(0, 10);
+      G.dailyStreak = (G.dailyLast === yd) ? (G.dailyStreak || 0) + 1 : 1;
+      G.dailyLast = today;
+    }
+    const t2 = titleFor(G.dailyStreak);
+    const isNew = t2 && t2 !== (G.title || '');
+    if (isNew) G.title = t2;
+    dailyInfo = { streak: G.dailyStreak, title: G.title || '', newTitle: isNew ? t2 : '' };
+  }
   saveNow();
   showResults({
     place, order, basePay, stylePay, cash: p.cash, bestLapBonus,
     medals: newMedals, medalPay, setPay, golden, fee: race.fee,
-    featured: race.featured, total,
+    featured: race.featured, total, daily: dailyInfo,
   });
 }
