@@ -17,8 +17,8 @@ async function boot() {
   loadSave();
   // parallel: terrain never depends on the atlas, and both gate the prerender
   await Promise.all([
-    loadAtlas().catch(e => console.warn('atlas failed to load — procedural fallback', e)),
-    loadTerrain().catch(e => console.warn('terrain tiles failed — flat colors', e)),
+    loadAtlas().catch(e => console.warn('atlas failed to load, procedural fallback', e)),
+    loadTerrain().catch(e => console.warn('terrain tiles failed, flat colors', e)),
   ]);
   bindUI();
   bindInput();
@@ -53,5 +53,5 @@ boot().catch(e => {
   const el = document.getElementById('scr-menu');
   el.classList.add('show');
   const foot = document.getElementById('menu-stats');
-  if (foot) foot.textContent = 'Load error — check connection and refresh.';
+  if (foot) foot.textContent = 'Load error, check connection and refresh.';
 });

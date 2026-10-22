@@ -144,5 +144,11 @@
  "special": {
   "type": "wolfsden",
   "label": "Win with a Golden Sprocket, 300+ style and zero off-tracks"
+ },
+ "tt": {
+  "bronze": 23.8,
+  "silver": 20.5,
+  "gold": 16.5,
+  "platinum": 11.1
  }
 }

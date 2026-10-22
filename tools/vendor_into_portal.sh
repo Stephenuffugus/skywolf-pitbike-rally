@@ -5,7 +5,7 @@
 # fresh src-<hash>/ dir and ?v=<hash> on css/json/img fetches. Old URLs simply
 # stop being referenced; no cache purge needed.
 set -euo pipefail
-SRC=/tmp/claude-1000/-workspaces-lucid-winds/5799e815-cf72-4e32-97b5-2d7c23882cd0/scratchpad/skywolf-pitbike-rally
+SRC=/workspaces/skywolf-pitbike-rally
 DST=/workspaces/lucid-winds/satellites/pitbike-rally
 HASH=$(git -C "$SRC" rev-parse --short HEAD)
 

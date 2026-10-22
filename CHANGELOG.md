@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-22 — v1.6 Time Trial (packet A of the replayability build out)
+- TIME TRIAL on every authored track and variant: solo, no fee, no purse,
+  no wear. Your best lap is judged against four target times (bronze,
+  silver, gold, platinum) and each medal pays once per track and variant.
+  The track card grows a dashed row of ⏱ chips with four dots; the HUD
+  swaps to TT / current lap / best lap / next target with a ↻ restart
+  button; results show the lap, the ladder and what paid, with RUN IT
+  AGAIN (one second countdown) and NEXT. Targets live per track in
+  data/tracks/*.json (`tt`), measured from autopilot laps on a stock and a
+  maxed bike; the economy.tt ladder is the fallback (the Daily).
+- Dev hook: `__PBR.autopilot = true` lets the AI drive the player's bike
+  (headless gates and target measurement).
+- Copy: dashes out of player text, "Sky Wolf Studio" title.
+
 ## 2026-07-04 — v1.4 cache-freeze fix + progression unlocks + menu fit
 - ROOT CAUSE of "race stuck at 3": the portal host ignores no-cache headers
   (modules observed cached 4h, one 7 DAYS) and served players mixed old/new

@@ -101,5 +101,11 @@
   "type": "nitroGrabs",
   "n": 3,
   "label": "Grab 3 nitro pickups in one race"
+ },
+ "tt": {
+  "bronze": 14.8,
+  "silver": 12.7,
+  "gold": 10.7,
+  "platinum": 7.9
  }
 }

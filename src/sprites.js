@@ -27,7 +27,7 @@ export async function loadAtlas() {
     // something between us and the player transformed the image — refuse it
     // (procedural fallback) instead of drawing garbage rects
     console.warn('atlas dims ' + img.width + 'x' + img.height + ' != manifest ' +
-      map.__w + 'x' + map.__h + ' — image was transformed in transit; procedural fallback');
+      map.__w + 'x' + map.__h + ' · image was transformed in transit; procedural fallback');
     img = null; map = {};
   }
   return map;

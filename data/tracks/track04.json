@@ -109,5 +109,11 @@
   "type": "style",
   "n": 150,
   "label": "Score 150+ style points"
+ },
+ "tt": {
+  "bronze": 27.4,
+  "silver": 23.6,
+  "gold": 19.6,
+  "platinum": 13.8
  }
 }

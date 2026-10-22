@@ -1,7 +1,7 @@
 /* Screens: menu, circuit/track select (variants, medals, fees, featured),
    garage (10 slots, wear/repair, rotating stock), results.
    Circular import with race.js is fine — all cross-calls happen at runtime. */
-import { S, bikeStats, statPct, fmtTime, partById, configKey, circuitUnlocked, circuitMedalCount } from './state.js';
+import { TT_ORDER, S, bikeStats, statPct, fmtTime, partById, configKey, circuitUnlocked, circuitMedalCount } from './state.js';
 import { startRace, dailyFeatured, installDailyTrack, dailyTrackIndex, dailyNumber, titleFor, nextTitle } from './race.js';
 import { saveNow } from './save.js';
 import { audioInit, audioRace } from './audio.js';
@@ -154,9 +154,17 @@ export function renderTracks() {
         const best = G.best[key];
         const featHere = isFeat && feat.variant === v.id;
         return '<button class="vbtn' + (featHere ? ' feat' : '') + '" data-ti="' + ti + '" data-v="' + v.id + '" ' +
-          'title="' + v.label + (best ? ' — best ' + fmtTime(best / 1000) : '') + '">' +
+          'title="' + v.label + (best ? ' · best ' + fmtTime(best / 1000) : '') + '">' +
           (v.tag || '▶') + (featHere ? '🔥' : '') + (medals ? '<i>' + medals + '</i>' : '') + '</button>';
       }).join('');
+      const ttChips = t.targetLap ? VARIANTS.map(v => {
+        const key = configKey(ti, v.id);
+        const rec = G.tt[key];
+        const dots = TT_ORDER.map(k => '<b class="ttm ' + k[0] + (rec && rec.medals.includes(k) ? ' on' : '') + '"></b>').join('');
+        return '<button class="vbtn tt" data-ti="' + ti + '" data-v="' + v.id + '" data-tt="1" ' +
+          'title="Time trial, ' + v.label + (rec && rec.best ? ', best lap ' + fmtTime(rec.best / 1000) : '') + '">' +
+          '⏱' + (v.tag || '') + '<i>' + dots + '</i></button>';
+      }).join('') : '';
       const bestN = G.best[configKey(ti, 0)];
       card.innerHTML =
         '<span class="tnum">' + String(ti + 1).padStart(2, '0') + (isFeat ? ' <b class="feat-tag">🔥 2× TODAY</b>' : '') + '</span>' +
@@ -166,13 +174,15 @@ export function renderTracks() {
           (t.targetLap ? ' · target ' + t.targetLap.toFixed(1) + 's' : '') + '</span>' +
         (t.special ? '<span class="tspecial">🥉 ' + t.special.label + '</span>' : '') +
         '<span class="tbest">' + (bestN ? 'BEST ' + fmtTime(bestN / 1000) : 'NO TIME SET') + '</span>' +
-        '<span class="vrow">' + variantChips + '</span>';
+        '<span class="vrow">' + variantChips + '</span>' +
+        (ttChips ? '<span class="ttlab">⏱ TIME TRIAL · solo, your best lap vs the clock</span><span class="vrow">' + ttChips + '</span>' : '');
       wrap.appendChild(card);
     }
   }
   wrap.querySelectorAll('.vbtn').forEach(b => {
     b.addEventListener('click', () => {
       const ti = +b.dataset.ti, v = +b.dataset.v;
+      if (b.dataset.tt) { audioInit(); startRace(ti, v, { tt: true }); return; }
       const featHere = feat && feat.trackIndex === ti && feat.variant === v;
       tryStart(ti, v, featHere);
     });
@@ -273,7 +283,7 @@ export function renderGarage() {
   if (rac > 0) {
     const fixbar = document.createElement('button');
     fixbar.className = 'ghost-btn fix-all';
-    fixbar.textContent = '🔧 REPAIR ALL PARTS — ' + rac.toLocaleString() + ' ⚙';
+    fixbar.textContent = '🔧 REPAIR ALL PARTS · ' + rac.toLocaleString() + ' ⚙';
     fixbar.addEventListener('click', () => {
       if (repairAll()) { saveNow(); renderGarage(); } else flashWallet('garage-wallet');
     });
@@ -318,9 +328,42 @@ function flashWallet(id) {
   el.classList.remove('flash'); void el.offsetWidth; el.classList.add('flash');
 }
 
-export function showResults(r) {
+/* Time trial results: the lap, the four targets, what paid, run it again. */
+function showTTResults(r) {
   const G = S.G;
   setScreen('results');
+  const t = S.DATA.tracks[S.race.trackIndex];
+  const el = document.getElementById('res-place');
+  el.textContent = r.tier ? r.tier.toUpperCase() + (r.record ? ' · NEW BEST' : '') : 'NO MEDAL YET';
+  el.className = 'res-place banner ' + (r.tier ? 'p0' : 'p3');
+  const hero = document.getElementById('res-hero');
+  hero.src = ((r.tier === 'platinum' || r.tier === 'gold') ? 'assets/art/bike/bikeview_victory_f01.png'
+           : 'assets/art/bike/bikeview_ride_a.png') + '?v=' + ART_V;
+  applyPaintToHeroes();
+  const rec = G.tt[configKey(S.race.trackIndex, S.race.variant)] || { medals: [] };
+  const rows = [['⏱ Best lap' + (r.record ? ', new record' : ''), r.bestMs ? fmtTime(r.bestMs / 1000) : 'no full lap']];
+  // one ladder row: four dots, lit when owned, each with its target time
+  rows.push(['Targets', '<span class="ttlad">' + TT_ORDER.map(k =>
+    '<span class="' + (rec.medals.includes(k) ? 'on' : '') + '"><b class="ttm ' + k[0] + (rec.medals.includes(k) ? ' on' : '') + '"></b>' + fmtTime(r.targets[k]) + '</span>').join('') + '</span>']);
+  if (r.medals.length === 1) rows.push([r.medals[0].toUpperCase() + ' time trial medal · ' + t.name, '+' + r.medalPay.toLocaleString() + ' ⚙']);
+  else if (r.medals.length > 1) rows.push([r.medals.length + ' time trial medals · ' + t.name, '+' + r.medalPay.toLocaleString() + ' ⚙']);
+  document.getElementById('res-rows').innerHTML = rows.map(x => '<div class="rrow"><span>' + x[0] + '</span><b>' + x[1] + '</b></div>').join('');
+  document.getElementById('res-total').textContent = '+' + r.total.toLocaleString() + ' ⚙';
+  document.getElementById('res-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
+  document.getElementById('res-order').innerHTML = '';
+  const ni = S.race.trackIndex + 1;
+  const nextBtn = document.getElementById('res-next');
+  const nextOk = ni < 12 && unlockedTrackList().includes(ni) && !!(S.DATA.tracks[ni] && S.DATA.tracks[ni].targetLap);
+  nextBtn.style.display = nextOk ? 'block' : 'none';
+  nextBtn.textContent = 'NEXT: ' + (nextOk ? S.DATA.tracks[ni].name.toUpperCase() : '');
+  document.getElementById('res-again').textContent = 'RUN IT AGAIN';
+}
+
+export function showResults(r) {
+  if (r.tt) { showTTResults(r); return; }
+  const G = S.G;
+  setScreen('results');
+  document.getElementById('res-again').textContent = 'RACE AGAIN';
   const placeTxt = ['1st PLACE!', '2nd PLACE', '3rd PLACE', '4th PLACE'][r.place];
   document.getElementById('res-place').textContent = placeTxt;
   document.getElementById('res-place').className = 'res-place banner p' + r.place;
@@ -338,8 +381,8 @@ export function showResults(r) {
     ['Best lap bonus', r.bestLapBonus],
   ];
   if (r.golden) rows.push(['✨ Golden Sprocket', r.golden]);
-  if (r.daily) rows.push(['🔥 Daily streak ' + r.daily.streak + (r.daily.newTitle ? (' — NEW TITLE: ' + r.daily.newTitle.toUpperCase()) : (r.daily.title ? (' · ' + r.daily.title) : '')), 0]);
-  for (const m of r.medals) rows.push([medalImg(m, 'medal-row') + ' ' + m.toUpperCase() + ' medal — ' + t.name, S.DATA.economy.medals[m]]);
+  if (r.daily) rows.push(['🔥 Daily streak ' + r.daily.streak + (r.daily.newTitle ? (' · NEW TITLE: ' + r.daily.newTitle.toUpperCase()) : (r.daily.title ? (' · ' + r.daily.title) : '')), 0]);
+  for (const m of r.medals) rows.push([medalImg(m, 'medal-row') + ' ' + m.toUpperCase() + ' medal · ' + t.name, S.DATA.economy.medals[m]]);
   if (r.setPay) rows.push(['Race-set completion bonus', r.setPay]);
   const tb = document.getElementById('res-rows');
   tb.innerHTML = rows.map(x => '<div class="rrow"><span>' + x[0] + '</span><b>+' + x[1].toLocaleString() + ' ⚙</b></div>').join('')
@@ -348,7 +391,7 @@ export function showResults(r) {
   document.getElementById('res-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
   document.getElementById('res-order').innerHTML = r.order.map((b, i) =>
     '<div class="orow' + (b.isAI ? '' : ' me') + '"><i style="background:' + b.color + '"></i>' + (i + 1) + '. ' + b.name +
-    (b.finished ? ' — ' + fmtTime(b.finishTime) : ' — DNF') + '</div>').join('');
+    (b.finished ? ' · ' + fmtTime(b.finishTime) : ' · DNF') + '</div>').join('');
 
   const ni = S.race.trackIndex + 1;
   const nextBtn = document.getElementById('res-next');
@@ -364,10 +407,12 @@ export function bindUI() {
   document.getElementById('tracks-back').addEventListener('click', () => setScreen('menu'));
   document.getElementById('garage-back').addEventListener('click', () => setScreen('menu'));
   document.getElementById('res-again').addEventListener('click', () => {
+    if (S.race.tt) { startRace(S.race.trackIndex, S.race.variant, { tt: true, quick: true }); return; }
     if (!tryStart(S.race.trackIndex, S.race.variant, false)) setScreen('tracks');
   });
   document.getElementById('res-next').addEventListener('click', () => {
     const ni = Math.min(S.DATA.tracks.length - 1, S.race.trackIndex + 1);
+    if (S.race.tt) { startRace(ni, 0, { tt: true }); return; }
     if (!tryStart(ni, 0, false)) setScreen('tracks');
   });
   document.getElementById('res-garage').addEventListener('click', () => setScreen('garage'));
@@ -377,11 +422,17 @@ export function bindUI() {
   document.getElementById('plate-up').addEventListener('click', () => { G.plate = (G.plate % 99) + 1; saveNow(); renderGarage(); });
   document.getElementById('plate-dn').addEventListener('click', () => { G.plate = ((G.plate + 97) % 99) + 1; saveNow(); renderGarage(); });
 
+  // time trial: instant restart from the HUD (one second countdown)
+  document.getElementById('btn-restart').addEventListener('click', () => {
+    if (!S.race.tt || !S.race.active) return;
+    startRace(S.race.trackIndex, S.race.variant, { tt: true, quick: true });
+  });
   // pause
   document.getElementById('btn-pause').addEventListener('click', () => { S.paused = true; document.getElementById('pause-ov').classList.add('show'); audioRace(false); });
   document.getElementById('pause-resume').addEventListener('click', () => { S.paused = false; document.getElementById('pause-ov').classList.remove('show'); audioRace(true); });
   document.getElementById('pause-restart').addEventListener('click', () => {
     S.paused = false; document.getElementById('pause-ov').classList.remove('show');
+    if (S.race.tt) { startRace(S.race.trackIndex, S.race.variant, { tt: true, quick: true }); return; }
     if (!tryStart(S.race.trackIndex, S.race.variant, false)) setScreen('tracks');
   });
   document.getElementById('pause-quit').addEventListener('click', () => { S.paused = false; S.race.active = false; document.getElementById('pause-ov').classList.remove('show'); audioRace(false); setScreen('menu'); });

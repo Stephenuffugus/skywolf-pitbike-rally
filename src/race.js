@@ -1,6 +1,6 @@
 /* Race lifecycle: start (fees/variants/featured), per-frame update (ghost
    recording, golden spawn), finish (payouts, wear, medals, set bonus). */
-import { S, bikeStats, popup, configKey, circuitOf } from './state.js';
+import { S, bikeStats, popup, configKey, circuitOf, ttTargets, ttTierFor, TT_ORDER } from './state.js';
 import { buildTrack, applyVariant, prerenderTrack } from './track.js';
 import { makeBike, updateBike, updateAI, bikeCollisions, racePositions } from './physics.js';
 import { setTrackCanvas } from './render.js';
@@ -92,7 +92,8 @@ export function startRace(ti, variant, opts) {
   const { G, DATA, race } = S;
   variant = variant || 0;
   const circuit = circuitOf(ti);
-  const fee = circuit ? circuit.fee : 0;
+  const tt = !!(opts && opts.tt);
+  const fee = tt ? 0 : (circuit ? circuit.fee : 0);
   if (fee > 0) {
     if (G.wallet < fee) return false;       // UI gates this; belt and suspenders
     G.wallet -= fee;
@@ -103,16 +104,18 @@ export function startRace(ti, variant, opts) {
   S.track = buildTrack(def, raceSeed);
   if (S.track.hasShiftZones) S.track.shiftZones(0);
   race.laps = def.laps;
-  race.t = 0; race.countdown = 3.2; race.started = false; race.over = false; race.active = true;
+  race.t = 0; race.countdown = (opts && opts.quick) ? 1.0 : 3.2; race.started = false; race.over = false; race.active = true;
   race.popups = []; race.finishOrder = []; race.pauseAfter = 0;
   race.trackIndex = ti; race.variant = variant; race.fee = fee;
-  race.featured = !!(opts && opts.featured);
+  race.featured = !!(opts && opts.featured) && !tt;
+  race.tt = tt;
+  document.body.classList.toggle('tt', tt);
   race.ghostT = 0;
 
   // golden sprocket: rolled at race start, spawns once the player clears lap 1
   const goldRoll = def.goldenAlways || Math.random() < DATA.economy.golden.chance;
   race.golden = null;
-  race.goldenPending = goldRoll;
+  race.goldenPending = goldRoll && !tt;
 
   // ghost of your best lap on this config
   const ghost = G.ghosts[configKey(ti, variant)];
@@ -125,7 +128,7 @@ export function startRace(ti, variant, opts) {
   const track = S.track;
   const bikes = S.bikes = [];
   const N = track.N;
-  for (let k = 0; k < 4; k++) {
+  for (let k = 0; k < (tt ? 1 : 4); k++) {
     const back = 30 + Math.floor(k / 2) * 22;
     const i = (N - back) % N;
     const nrm = track.normals[i];
@@ -200,7 +203,8 @@ export function updateRace(dt) {
   }
   race.t += dt;
 
-  for (const b of S.bikes) { if (b.isAI) updateAI(b, dt); }
+  // __PBR.autopilot: the headless gate lets the AI drive the player's bike
+  for (const b of S.bikes) { if (b.isAI || (b === S.bikes[0] && window.__PBR && window.__PBR.autopilot)) updateAI(b, dt); }
   for (const b of S.bikes) updateBike(b, dt);
   bikeCollisions();
   updateFx(dt);
@@ -287,10 +291,50 @@ function specialDone(p, place, sp) {
   }
 }
 
+/* Time trial: solo, no fee, no purse, no wear. The best lap is judged against
+   four target times (economy.tt.ladder times the track targetLap); each medal
+   pays once per track and variant. The lap also feeds the shared ghost. */
+function finishTimeTrial() {
+  const { G, DATA, race } = S;
+  const def = S.track.def;
+  const p = S.bikes[0];
+  const key = configKey(race.trackIndex, race.variant);
+  const EC = DATA.economy;
+  const lapS = p.bestLap;
+  const bestMs = lapS < Infinity ? Math.round(lapS * 1000) : 0;
+  const rec = G.tt[key] || { best: 0, medals: [] };
+  const tier = ttTierFor(def, lapS);
+  const newMedals = [];
+  if (tier) {
+    for (const k of TT_ORDER) {
+      if (!rec.medals.includes(k)) newMedals.push(k);
+      if (k === tier) break;
+    }
+  }
+  let medalPay = 0;
+  for (const m of newMedals) medalPay += EC.tt.pay[m];
+  rec.medals = rec.medals.concat(newMedals);
+  const record = bestMs > 0 && (!rec.best || bestMs < rec.best);
+  if (record) rec.best = bestMs;
+  G.tt[key] = rec;
+  if (p.bestLapStream && p.bestLapStream.length >= 6 && bestMs > 0) {
+    const existing = G.ghosts[key];
+    if (!existing || bestMs < existing.ms) G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream };
+  }
+  G.wallet += medalPay; G.earnings += medalPay;
+  saveNow();
+  showResults({
+    tt: true, place: 0, order: [p], bestMs, record, tier, targets: ttTargets(def),
+    medals: newMedals, medalPay, total: medalPay, fee: 0, basePay: 0, stylePay: 0, cash: 0,
+    bestLapBonus: 0, golden: 0, setPay: 0, featured: false, daily: null,
+  });
+}
+
 export function finishRace() {
   const { G, DATA, race } = S;
   race.active = false;
   audioRace(false);
+  if (race.tt) { finishTimeTrial(); return; }
   const order = racePositions();
   const place = order.indexOf(S.bikes[0]);
   const def = S.track.def;

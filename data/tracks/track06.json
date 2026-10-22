@@ -101,5 +101,11 @@
  "special": {
   "type": "winNoNitro",
   "label": "Win without using nitro"
+ },
+ "tt": {
+  "bronze": 17.7,
+  "silver": 15.3,
+  "gold": 12.2,
+  "platinum": 8.0
  }
 }

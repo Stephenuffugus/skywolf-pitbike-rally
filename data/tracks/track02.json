@@ -98,5 +98,11 @@
  "special": {
   "type": "noOfftrack",
   "label": "Never leave the track"
+ },
+ "tt": {
+  "bronze": 26.3,
+  "silver": 22.6,
+  "gold": 18.7,
+  "platinum": 13.2
  }
 }

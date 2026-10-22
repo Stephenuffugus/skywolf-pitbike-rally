@@ -20,6 +20,7 @@ function defaults() {
     medals: {},        // configKey -> ['gold','silver','bronze'] earned
     wear: {},          // partId -> 0..100
     ghosts: {},        // configKey -> {ms, hz, pts:[x,y,heading]*n} best-lap stream
+    tt: {},            // configKey -> {best: lap ms, medals: ['bronze','silver','gold','platinum']}
     wins: 0, races: 0, earnings: 0,
     trackIndex: 0, variant: 0,
     muted: false,
@@ -53,6 +54,7 @@ export function loadSave() {
   try { raw = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { /* corrupt */ }
   const d = defaults();
   const g = raw && raw.v ? Object.assign(d, migrate(raw)) : d;
+  g.tt = g.tt || {};
   // Sets don't survive JSON; keep arrays in storage, Sets in memory
   g.owned = new Set(g.owned);
   g.ownedColors = new Set(g.ownedColors);

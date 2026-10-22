@@ -13,6 +13,7 @@ export const S = {
     trackIndex: 0, variant: 0, fee: 0, featured: false,
     golden: null,            // {x,y,active} when the Golden Sprocket spawned
     ghost: null, ghostRec: null,
+    tt: false,               // time trial: solo, best lap against four target times
   },
   paused: false,
   currentScreen: 'menu',
@@ -83,6 +84,22 @@ export function circuitMedalCount(circuitId) {
 export function circuitUnlocked(circuit) {
   if (!circuit.unlock) return true;
   return circuitMedalCount(circuit.unlock.circuit) >= circuit.unlock.medals;
+}
+
+/* ---- time trial ---- */
+export const TT_ORDER = ['bronze', 'silver', 'gold', 'platinum'];
+export function ttTargets(def) {
+  if (def && def.tt) return def.tt;                 // measured per track (autopilot laps, stock and maxed bike)
+  const L = S.DATA.economy.tt.ladder, base = def && def.targetLap;
+  if (!base) return null;                            // generated tracks fall back to the ladder
+  return { platinum: base * L.platinum, gold: base * L.gold, silver: base * L.silver, bronze: base * L.bronze };
+}
+export function ttTierFor(def, lapS) {
+  const t = ttTargets(def);
+  if (!t || !(lapS < Infinity)) return null;
+  let tier = null;
+  for (const k of TT_ORDER) if (lapS <= t[k]) tier = k;
+  return tier;
 }
 
 export function popup(x, y, text, color) {

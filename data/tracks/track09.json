@@ -117,5 +117,11 @@
   "type": "bridgePass",
   "n": 3,
   "label": "Cross the bridge over a rival 3 times"
+ },
+ "tt": {
+  "bronze": 18.3,
+  "silver": 15.8,
+  "gold": 13.2,
+  "platinum": 9.5
  }
 }

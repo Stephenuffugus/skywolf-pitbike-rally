@@ -97,5 +97,11 @@
   "type": "cleanJumps",
   "n": 4,
   "label": "Land 4 clean jumps in one race"
+ },
+ "tt": {
+  "bronze": 15.8,
+  "silver": 13.6,
+  "gold": 11.0,
+  "platinum": 7.5
  }
 }

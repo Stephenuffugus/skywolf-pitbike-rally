@@ -94,5 +94,11 @@
   "type": "airtime",
   "n": 3,
   "label": "Total 3.0s+ airtime in one race"
+ },
+ "tt": {
+  "bronze": 14.6,
+  "silver": 12.6,
+  "gold": 10.6,
+  "platinum": 7.8
  }
 }
