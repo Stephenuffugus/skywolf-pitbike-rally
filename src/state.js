@@ -14,6 +14,7 @@ export const S = {
     golden: null,            // {x,y,active} when the Golden Sprocket spawned
     ghost: null, ghostRec: null,
     tt: false,               // time trial: solo, best lap against four target times
+    career: false,           // a season round: points, a named rival, no fee
   },
   paused: false,
   currentScreen: 'menu',
@@ -85,6 +86,26 @@ export function circuitUnlocked(circuit) {
   if (!circuit.unlock) return true;
   return circuitMedalCount(circuit.unlock.circuit) >= circuit.unlock.medals;
 }
+
+/* ---- career seasons ---- */
+export function seasonById(id) { return S.DATA.seasons.seasons.find(s => s.id === id); }
+export const AI_NAMES = ['Dusty', 'Rico', 'Mags'];
+/* the two riders who are not this season's rival, in bike slot order (2, 3) */
+export function seasonOthers(sea) { return AI_NAMES.filter(n => n !== sea.rival.name); }
+export function seasonUnlocked(sea) { return !sea.unlock || !!S.G.trophies[sea.unlock]; }
+/* standings: [{name, pts, you, rival}] sorted by points, ties keep order */
+export function seasonStandings(car) {
+  const sea = seasonById(car.id);
+  const others = seasonOthers(sea);
+  const rows = [
+    { name: 'You', pts: car.pts[0], you: true },
+    { name: sea.rival.name, pts: car.pts[1], rival: true },
+    { name: others[0], pts: car.pts[2] },
+    { name: others[1], pts: car.pts[3] },
+  ];
+  return rows.sort((a, b) => b.pts - a.pts);
+}
+export function seasonPlace(car) { return seasonStandings(car).findIndex(r => r.you) + 1; }
 
 /* ---- time trial ---- */
 export const TT_ORDER = ['bronze', 'silver', 'gold', 'platinum'];

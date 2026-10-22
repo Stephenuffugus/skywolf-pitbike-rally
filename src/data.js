@@ -9,11 +9,11 @@ async function j(url) {
 }
 
 export async function loadData() {
-  const [economy, parts, cosmetics, trackIndex] = await Promise.all([
+  const [economy, parts, cosmetics, trackIndex, seasons] = await Promise.all([
     j('data/economy.json'), j('data/parts.json'), j('data/cosmetics.json'),
-    j('data/tracks/index.json'),
+    j('data/tracks/index.json'), j('data/seasons.json'),
   ]);
   const tracks = await Promise.all(trackIndex.map(id => j('data/tracks/' + id + '.json')));
-  S.DATA = { economy, parts, cosmetics, tracks };
+  S.DATA = { economy, parts, cosmetics, tracks, seasons };
   return S.DATA;
 }

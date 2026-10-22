@@ -34,13 +34,14 @@ if (window.Sunbeam) {
     <button class="icon-btn" id="btn-mute" aria-label="Mute">🔊</button>
     <button class="icon-btn" id="btn-fs" aria-label="Fullscreen">⛶</button>
   </div>
-  <div class="logo-kick banner" id="logo-kick" style="display:none">SKYWOLF STUDIOS PRESENTS</div>
+  <div class="logo-kick banner" id="logo-kick" style="display:none">SKY WOLF STUDIO PRESENTS</div>
   <img class="logo-img" src="assets/art/ui/ui_logo_lockup.png" alt="Pit Bike Rally"
        onerror="this.style.display='none';document.getElementById('logo-h1').style.display='';document.getElementById('logo-kick').style.display=''">
   <h1 class="logo banner" id="logo-h1" style="display:none">PIT BIKE<br><b>RALLY</b></h1>
   <img class="menu-hero" id="menu-hero" src="assets/art/bike/bike_ride_f01.png" alt="">
   <div class="logo-sub">4 riders · 1 screen · dirt everywhere</div>
   <div class="menu-btns">
+    <button class="plate-btn" id="btn-career">CAREER ▸</button>
     <button class="plate-btn" id="btn-race">RACE ▸</button>
     <button class="ghost-btn" id="btn-garage">GARAGE &amp; PARTS SHOP</button>
   </div>
@@ -59,6 +60,16 @@ if (window.Sunbeam) {
     <span class="wallet-chip" id="tracks-wallet">0 ⚙</span>
   </div>
   <div class="scr-body"><div id="track-list"></div></div>
+</div>
+
+<!-- CAREER -->
+<div class="screen" id="scr-career">
+  <div class="scr-head">
+    <button class="ghost-btn" id="career-back">◂ Back</button>
+    <h2 class="banner">Career</h2>
+    <span class="wallet-chip" id="career-wallet">0 ⚙</span>
+  </div>
+  <div class="scr-body"><div id="career-body"></div></div>
 </div>
 
 <!-- GARAGE -->

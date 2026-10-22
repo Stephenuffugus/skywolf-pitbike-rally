@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-22 — v1.7 Career seasons with a rival (packet B)
+- CAREER on the menu: three seasons (Rookie Cup 6 rounds, Pro Tour 8,
+  Ironman Series 8) built from the authored tracks and variants, no entry
+  fees, points 10/7/5/3 per round for all four riders, standings on the
+  career screen, a named rival (Dusty, Rico, Mags) with a skill edge and a
+  season long rubber band who talks before rounds and at the end, a prize
+  split by final place and a trophy. Rounds are final (no race again).
+  Finishing a season unlocks the next; a season can be ridden again for a
+  better trophy. Data in data/seasons.json.
+- Every plate and ghost button is at least 48 px tall.
+
 ## 2026-10-22 — v1.6 Time Trial (packet A of the replayability build out)
 - TIME TRIAL on every authored track and variant: solo, no fee, no purse,
   no wear. Your best lap is judged against four target times (bronze,

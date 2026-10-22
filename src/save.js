@@ -21,6 +21,8 @@ function defaults() {
     wear: {},          // partId -> 0..100
     ghosts: {},        // configKey -> {ms, hz, pts:[x,y,heading]*n} best-lap stream
     tt: {},            // configKey -> {best: lap ms, medals: ['bronze','silver','gold','platinum']}
+    career: null,      // active season: {id, round, pts:[you, rival, a, b], log:[place...]}
+    trophies: {},      // seasonId -> best final place (1..4)
     wins: 0, races: 0, earnings: 0,
     trackIndex: 0, variant: 0,
     muted: false,
@@ -55,6 +57,8 @@ export function loadSave() {
   const d = defaults();
   const g = raw && raw.v ? Object.assign(d, migrate(raw)) : d;
   g.tt = g.tt || {};
+  g.trophies = g.trophies || {};
+  if (g.career === undefined) g.career = null;
   // Sets don't survive JSON; keep arrays in storage, Sets in memory
   g.owned = new Set(g.owned);
   g.ownedColors = new Set(g.ownedColors);

@@ -1,0 +1,39 @@
+{
+  "points": [10, 7, 5, 3],
+  "prizeShare": [1.0, 0.6, 0.35, 0.15],
+  "seasons": [
+    {
+      "id": "rookie", "name": "Rookie Cup", "sub": "Six rounds on the Amateur tracks. Dusty thinks it is his.",
+      "events": [[0, 0], [1, 0], [2, 0], [3, 0], [0, 2], [2, 1]],
+      "prize": 3000, "unlock": null,
+      "rival": { "name": "Dusty", "paint": "orange", "edge": 0.03,
+        "intro": "Dusty rides the orange bike. He has won this cup twice and says so.",
+        "ahead": "Dusty: Nice start. Ovals are easy. Wait for the gulch.",
+        "behind": "Dusty: Told you. Save your sprockets for a bus ticket.",
+        "won": "Dusty: Fine. You were faster. The Pro Tour is a different animal.",
+        "lost": "Dusty: Two for me, zero for you. Come back when the bike is real." }
+    },
+    {
+      "id": "pro", "name": "Pro Tour", "sub": "Eight rounds on the Pro tracks, mirrors and reverses included.",
+      "events": [[4, 0], [5, 0], [6, 0], [7, 0], [4, 1], [6, 2], [5, 3], [7, 2]],
+      "prize": 6000, "unlock": "rookie",
+      "rival": { "name": "Rico", "paint": "purple", "edge": 0.035,
+        "intro": "Rico does not talk much. He wins on the mud and expects you to fall in it.",
+        "ahead": "Rico: Points are not trophies.",
+        "behind": "Rico: You are learning the lines. Slowly.",
+        "won": "Rico: Good. Mags is waiting. She does not lose.",
+        "lost": "Rico: Same time next season." }
+    },
+    {
+      "id": "ironman", "name": "Ironman Series", "sub": "Eight rounds. Reverse laps, long races, and the Den to finish.",
+      "events": [[8, 0], [9, 0], [10, 0], [8, 2], [9, 3], [10, 2], [11, 0], [11, 2]],
+      "prize": 12000, "unlock": "pro",
+      "rival": { "name": "Mags", "paint": "mint", "edge": 0.04,
+        "intro": "Mags has never lost a series. She has the Den memorized.",
+        "ahead": "Mags: The Den decides it. Not the points.",
+        "behind": "Mags: Keep up or go home.",
+        "won": "Mags: Nobody has done that. Enjoy it. I will not let it happen twice.",
+        "lost": "Mags: As expected. The Den is mine." }
+    }
+  ]
+}

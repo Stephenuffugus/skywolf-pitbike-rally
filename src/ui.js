@@ -1,7 +1,7 @@
 /* Screens: menu, circuit/track select (variants, medals, fees, featured),
    garage (10 slots, wear/repair, rotating stock), results.
    Circular import with race.js is fine — all cross-calls happen at runtime. */
-import { TT_ORDER, S, bikeStats, statPct, fmtTime, partById, configKey, circuitUnlocked, circuitMedalCount } from './state.js';
+import { TT_ORDER, S, bikeStats, statPct, fmtTime, partById, configKey, circuitUnlocked, circuitMedalCount, seasonById, seasonUnlocked, seasonStandings, seasonPlace } from './state.js';
 import { startRace, dailyFeatured, installDailyTrack, dailyTrackIndex, dailyNumber, titleFor, nextTitle } from './race.js';
 import { saveNow } from './save.js';
 import { audioInit, audioRace } from './audio.js';
@@ -9,7 +9,7 @@ import { partWear, repairCost, repairPart, repairAll, repairAllCost, rotatingSto
 import { VARIANTS } from './track.js';
 import { ART_V } from './sprites.js';
 
-const screens = ['menu', 'tracks', 'garage', 'race', 'results'];
+const screens = ['menu', 'tracks', 'garage', 'race', 'results', 'career'];
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' };
 
 /* wave 0704 art: medal PNGs (emoji fallback if the file is missing) and
@@ -69,15 +69,106 @@ export function setScreen(name) {
   if (name === 'menu') renderMenu();
   if (name === 'tracks') renderTracks();
   if (name === 'garage') renderGarage();
+  if (name === 'career') renderCareer();
 }
 
 export function renderMenu() {
   const G = S.G;
   document.getElementById('menu-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
   const medals = Object.values(G.medals).reduce((n, m) => n + m.length, 0);
+  const cups = Object.values(G.trophies || {}).filter(p => p === 1).length;
   document.getElementById('menu-stats').textContent =
-    G.wins + ' wins · ' + G.races + ' races · ' + medals + ' medals · ' + G.earnings.toLocaleString() + '⚙ earned';
+    G.wins + ' wins · ' + G.races + ' races · ' + medals + ' medals · ' + (cups ? cups + (cups === 1 ? ' cup · ' : ' cups · ') : '') + G.earnings.toLocaleString() + '⚙ earned';
+  const cb = document.getElementById('btn-career');
+  if (G.career) { const sea = seasonById(G.career.id); cb.textContent = 'CAREER ▸ ' + sea.name.toUpperCase() + ' R' + Math.min(G.career.round + 1, sea.events.length); }
+  else cb.textContent = 'CAREER ▸';
   applyPaintToHeroes();
+}
+
+/* ═══ CAREER: seasons of rounds with points, a named rival who talks, a
+   prize and a trophy at the end. Rounds are final (no retry), so the season
+   is a story you ride once and can ride again for a better trophy. ═══ */
+function rivalLine(sea, car) {
+  if (!car || car.round === 0) return sea.rival.intro;
+  return car.pts[0] >= car.pts[1] ? sea.rival.ahead : sea.rival.behind;
+}
+function standingsHtml(car) {
+  return '<div class="standings">' + seasonStandings(car).map((r, i) =>
+    '<div class="srow' + (r.you ? ' me' : '') + (r.rival ? ' rival' : '') + '"><span>' + (i + 1) + '. ' + r.name +
+    (r.rival ? ' <em>rival</em>' : '') + '</span><b>' + r.pts + ' pts</b></div>').join('') + '</div>';
+}
+export function renderCareer() {
+  const G = S.G;
+  const wrap = document.getElementById('career-body');
+  const SEA = S.DATA.seasons.seasons;
+  document.getElementById('career-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
+  wrap.innerHTML = '';
+  const car = G.career;
+  if (car) {
+    const sea = seasonById(car.id);
+    const done = car.round >= sea.events.length;
+    const card = document.createElement('div');
+    card.className = 'season-card active';
+    if (!done) {
+      const ev = sea.events[car.round];
+      const t = S.DATA.tracks[ev[0]];
+      card.innerHTML = '<span class="tnum">SEASON IN PROGRESS · ROUND ' + (car.round + 1) + ' OF ' + sea.events.length + '</span>' +
+        '<span class="tname">' + sea.name + '</span>' +
+        '<span class="tmeta">' + sea.sub + '</span>' +
+        standingsHtml(car) +
+        '<span class="rival-line">' + rivalLine(sea, car) + '</span>' +
+        '<span class="tmeta">Next: <b>' + t.name + '</b> · ' + VARIANTS[ev[1]].label + ' · ' + t.laps + ' laps</span>' +
+        '<div class="season-btns"><button class="plate-btn" data-round="1">START ROUND ' + (car.round + 1) + '</button>' +
+        '<button class="ghost-btn" data-abandon="1">ABANDON SEASON</button></div>';
+      card.querySelector('[data-round]').addEventListener('click', () => {
+        audioInit(); tryAutoFullscreen();
+        startRace(ev[0], ev[1], { career: true });
+      });
+      card.querySelector('[data-abandon]').addEventListener('click', () => {
+        if (card.dataset.sure) { G.career = null; saveNow(); renderCareer(); return; }
+        card.dataset.sure = '1'; card.querySelector('[data-abandon]').textContent = 'TAP AGAIN TO ABANDON';
+      });
+    } else {
+      const place = seasonPlace(car);
+      const share = S.DATA.seasons.prizeShare[place - 1] || 0;
+      const prize = Math.round(sea.prize * share);
+      const won = place === 1;
+      card.innerHTML = '<span class="tnum">SEASON COMPLETE</span>' +
+        '<span class="tname">' + sea.name + '</span>' +
+        '<span class="res-place banner ' + (won ? 'p0' : 'p' + (place - 1)) + '" style="font-size:30px;text-align:left;">' +
+        ['CHAMPION', '2nd overall', '3rd overall', '4th overall'][place - 1] + '</span>' +
+        standingsHtml(car) +
+        '<span class="rival-line">' + (won ? sea.rival.won : sea.rival.lost) + '</span>' +
+        '<span class="tmeta">Season prize: <b>' + prize.toLocaleString() + ' ⚙</b>' + (won ? ' · trophy to the garage' : '') + '</span>' +
+        '<div class="season-btns"><button class="plate-btn" data-collect="1">COLLECT ' + prize.toLocaleString() + ' ⚙</button></div>';
+      card.querySelector('[data-collect]').addEventListener('click', () => {
+        G.wallet += prize; G.earnings += prize;
+        if (!G.trophies[sea.id] || place < G.trophies[sea.id]) G.trophies[sea.id] = place;
+        G.career = null; saveNow(); renderCareer();
+      });
+    }
+    wrap.appendChild(card);
+    return;
+  }
+  for (const sea of SEA) {
+    const open = seasonUnlocked(sea);
+    const best = G.trophies[sea.id];
+    const card = document.createElement('div');
+    card.className = 'season-card' + (open ? '' : ' locked');
+    const need = sea.unlock ? seasonById(sea.unlock).name : '';
+    card.innerHTML = '<span class="tnum">' + sea.events.length + ' ROUNDS · PRIZE ' + sea.prize.toLocaleString() + ' ⚙' +
+      (best ? ' · <b class="trophy">' + (best === 1 ? '🏆 CHAMPION' : 'BEST ' + best + ['st', 'nd', 'rd', 'th'][best - 1]) + '</b>' : '') + '</span>' +
+      '<span class="tname">' + sea.name + '</span>' +
+      '<span class="tmeta">' + sea.sub + '</span>' +
+      '<span class="rival-line">' + sea.rival.intro + '</span>' +
+      (open ? '<div class="season-btns"><button class="plate-btn" data-start="1">' + (best ? 'RIDE IT AGAIN' : 'START SEASON') + '</button></div>'
+            : '<span class="tmeta">🔒 Finish the ' + need + ' first</span>');
+    if (open) card.querySelector('[data-start]').addEventListener('click', () => {
+      G.career = { id: sea.id, round: 0, pts: [0, 0, 0, 0], log: [] };
+      saveNow(); renderCareer();
+    });
+    wrap.appendChild(card);
+  }
 }
 
 function unlockedTrackList() {
@@ -357,6 +448,7 @@ function showTTResults(r) {
   nextBtn.style.display = nextOk ? 'block' : 'none';
   nextBtn.textContent = 'NEXT: ' + (nextOk ? S.DATA.tracks[ni].name.toUpperCase() : '');
   document.getElementById('res-again').textContent = 'RUN IT AGAIN';
+  document.getElementById('res-again').style.display = 'block';
 }
 
 export function showResults(r) {
@@ -384,17 +476,27 @@ export function showResults(r) {
   if (r.daily) rows.push(['🔥 Daily streak ' + r.daily.streak + (r.daily.newTitle ? (' · NEW TITLE: ' + r.daily.newTitle.toUpperCase()) : (r.daily.title ? (' · ' + r.daily.title) : '')), 0]);
   for (const m of r.medals) rows.push([medalImg(m, 'medal-row') + ' ' + m.toUpperCase() + ' medal · ' + t.name, S.DATA.economy.medals[m]]);
   if (r.setPay) rows.push(['Race-set completion bonus', r.setPay]);
+  if (r.career) rows.push(['🏁 Season points · round ' + r.career.round + ' of ' + r.career.rounds + ' · you ' + r.career.pts[0] + ', ' + r.career.rival + ' ' + r.career.pts[1] + ' · ' + ['leading', '2nd', '3rd', '4th'][r.career.place - 1], '+' + r.career.gained + ' pts']);
   const tb = document.getElementById('res-rows');
-  tb.innerHTML = rows.map(x => '<div class="rrow"><span>' + x[0] + '</span><b>+' + x[1].toLocaleString() + ' ⚙</b></div>').join('')
+  tb.innerHTML = rows.map(x => '<div class="rrow"><span>' + x[0] + '</span><b>' + (typeof x[1] === 'string' ? x[1] : '+' + x[1].toLocaleString() + ' ⚙') + '</b></div>').join('')
     + (r.fee ? '<div class="rrow fee"><span>Entry fee</span><b>−' + r.fee.toLocaleString() + ' ⚙</b></div>' : '');
   document.getElementById('res-total').textContent = '+' + r.total.toLocaleString() + ' ⚙';
   document.getElementById('res-wallet').textContent = G.wallet.toLocaleString() + ' ⚙';
   document.getElementById('res-order').innerHTML = r.order.map((b, i) =>
-    '<div class="orow' + (b.isAI ? '' : ' me') + '"><i style="background:' + b.color + '"></i>' + (i + 1) + '. ' + b.name +
+    '<div class="orow' + (b.isAI ? '' : ' me') + (b.rival ? ' rival' : '') + '"><i style="background:' + b.color + '"></i>' + (i + 1) + '. ' + b.name + (b.rival ? ' · rival' : '') +
     (b.finished ? ' · ' + fmtTime(b.finishTime) : ' · DNF') + '</div>').join('');
 
   const ni = S.race.trackIndex + 1;
   const nextBtn = document.getElementById('res-next');
+  const againBtn = document.getElementById('res-again');
+  if (r.career) {
+    // a round is final: no race again; the next button carries the season
+    againBtn.style.display = 'none';
+    nextBtn.style.display = 'block';
+    nextBtn.textContent = r.career.last ? 'SEASON RESULTS' : 'NEXT ROUND';
+    return;
+  }
+  againBtn.style.display = 'block';
   const nextOk = ni < S.DATA.tracks.length && unlockedTrackList().includes(ni);
   nextBtn.style.display = nextOk ? 'block' : 'none';
   nextBtn.textContent = 'NEXT: ' + (S.DATA.tracks[ni] ? S.DATA.tracks[ni].name.toUpperCase() : '');
@@ -404,6 +506,8 @@ export function bindUI() {
   const G = S.G;
   document.getElementById('btn-race').addEventListener('click', () => { audioInit(); tryAutoFullscreen(); setScreen('tracks'); });
   document.getElementById('btn-garage').addEventListener('click', () => setScreen('garage'));
+  document.getElementById('btn-career').addEventListener('click', () => { audioInit(); setScreen('career'); });
+  document.getElementById('career-back').addEventListener('click', () => setScreen('menu'));
   document.getElementById('tracks-back').addEventListener('click', () => setScreen('menu'));
   document.getElementById('garage-back').addEventListener('click', () => setScreen('menu'));
   document.getElementById('res-again').addEventListener('click', () => {
@@ -411,6 +515,7 @@ export function bindUI() {
     if (!tryStart(S.race.trackIndex, S.race.variant, false)) setScreen('tracks');
   });
   document.getElementById('res-next').addEventListener('click', () => {
+    if (S.race.career) { setScreen('career'); return; }
     const ni = Math.min(S.DATA.tracks.length - 1, S.race.trackIndex + 1);
     if (S.race.tt) { startRace(ni, 0, { tt: true }); return; }
     if (!tryStart(ni, 0, false)) setScreen('tracks');

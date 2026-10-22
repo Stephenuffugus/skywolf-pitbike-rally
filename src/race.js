@@ -1,6 +1,6 @@
 /* Race lifecycle: start (fees/variants/featured), per-frame update (ghost
    recording, golden spawn), finish (payouts, wear, medals, set bonus). */
-import { S, bikeStats, popup, configKey, circuitOf, ttTargets, ttTierFor, TT_ORDER } from './state.js';
+import { S, bikeStats, popup, configKey, circuitOf, ttTargets, ttTierFor, TT_ORDER, seasonById, seasonOthers, seasonPlace } from './state.js';
 import { buildTrack, applyVariant, prerenderTrack } from './track.js';
 import { makeBike, updateBike, updateAI, bikeCollisions, racePositions } from './physics.js';
 import { setTrackCanvas } from './render.js';
@@ -93,7 +93,9 @@ export function startRace(ti, variant, opts) {
   variant = variant || 0;
   const circuit = circuitOf(ti);
   const tt = !!(opts && opts.tt);
-  const fee = tt ? 0 : (circuit ? circuit.fee : 0);
+  const career = !!(opts && opts.career) && !!G.career;
+  const sea = career ? seasonById(G.career.id) : null;
+  const fee = (tt || career) ? 0 : (circuit ? circuit.fee : 0);
   if (fee > 0) {
     if (G.wallet < fee) return false;       // UI gates this; belt and suspenders
     G.wallet -= fee;
@@ -109,6 +111,7 @@ export function startRace(ti, variant, opts) {
   race.trackIndex = ti; race.variant = variant; race.fee = fee;
   race.featured = !!(opts && opts.featured) && !tt;
   race.tt = tt;
+  race.career = career;
   document.body.classList.toggle('tt', tt);
   race.ghostT = 0;
 
@@ -152,9 +155,22 @@ export function startRace(ti, variant, opts) {
       const skill = base + j * 0.035 + Math.random() * 0.02;
       const aiUp = Math.min(1, ti / 11);
       const aiPaints = AI_PAINT_PREFS.filter(p => p !== G.color);
-      const paintCol = DATA.cosmetics.colors.find(c => c.id === aiPaints[j]);
-      bike.isAI = true; bike.skill = skill; bike.name = AI_NAMES[j];
-      bike.paint = aiPaints[j];
+      let paintId = aiPaints[j], name = AI_NAMES[j], sk = skill;
+      if (career && j === 0) {
+        // the rival: named, painted, a skill edge, and a season-long rubber band
+        // (ahead on points makes the rival faster, behind makes it ease off)
+        const car = G.career, rv = sea.rival;
+        const adapt = Math.max(-0.03, Math.min(0.03, (car.pts[0] - car.pts[1]) * 0.004));
+        sk = base + 0.035 + (rv.edge || 0.03) + adapt;
+        name = rv.name;
+        if (rv.paint !== G.color) paintId = rv.paint;
+      } else if (career && sea) {
+        name = seasonOthers(sea)[j - 1] || name;
+      }
+      const paintCol = DATA.cosmetics.colors.find(c => c.id === paintId);
+      bike.isAI = true; bike.skill = sk; bike.name = name;
+      bike.rival = career && j === 0;
+      bike.paint = paintId;
       bike.color = paintCol ? paintCol.hex : AI_COLORS[j]; bike.plate = [11, 23, 42][j];
       bike.stats = {
         top: 285 + 130 * aiUp * skill, accel: 190 + 110 * aiUp * skill,
@@ -378,6 +394,22 @@ export function finishRace() {
 
   applyRaceWear(race.laps);
   earnSunbeams(place);
+  // career: points by finishing place for all four, the round advances
+  let careerInfo = null;
+  if (race.career && G.career) {
+    const car = G.career, sea = seasonById(car.id), PTS = DATA.seasons.points;
+    const gained = [];
+    for (const b of S.bikes) {
+      const pl = order.indexOf(b);
+      const slot = b === p ? 0 : (b.rival ? 1 : (S.bikes.indexOf(b) === 2 ? 2 : 3));
+      car.pts[slot] += PTS[pl];
+      gained[slot] = PTS[pl];
+    }
+    car.log.push(place + 1);
+    car.round++;
+    const last = car.round >= sea.events.length;
+    careerInfo = { gained: gained[0], rivalGained: gained[1], pts: car.pts.slice(), place: seasonPlace(car), round: car.round, rounds: sea.events.length, last, rival: sea.rival.name };
+  }
   // Daily Rally streak: finishing today's daily (any place) keeps the chain alive
   let dailyInfo = null;
   if (def.daily && p.finished) {
@@ -396,6 +428,6 @@ export function finishRace() {
   showResults({
     place, order, basePay, stylePay, cash: p.cash, bestLapBonus,
     medals: newMedals, medalPay, setPay, golden, fee: race.fee,
-    featured: race.featured, total, daily: dailyInfo,
+    featured: race.featured, total, daily: dailyInfo, career: careerInfo,
   });
 }
