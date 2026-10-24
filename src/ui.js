@@ -8,6 +8,7 @@ import { audioInit, audioRace } from './audio.js';
 import { partWear, repairCost, repairPart, repairAll, repairAllCost, rotatingStock, racesUntilRestock } from './shop.js';
 import { VARIANTS } from './track.js';
 import { ART_V } from './sprites.js';
+import { applyCtl } from './input.js';
 
 const screens = ['menu', 'tracks', 'garage', 'race', 'results', 'career'];
 const MEDAL_ICON = { gold: '🥇', silver: '🥈', bronze: '🥉' };
@@ -83,6 +84,7 @@ export function renderMenu() {
   if (G.career) { const sea = seasonById(G.career.id); cb.textContent = 'CAREER ▸ ' + sea.name.toUpperCase() + ' R' + Math.min(G.career.round + 1, sea.events.length); }
   else cb.textContent = 'CAREER ▸';
   applyPaintToHeroes();
+  document.getElementById('ctl-card').classList.toggle('show', !!G.ctlAsk);   // v1.9: offered once to an older save
 }
 
 /* ═══ CAREER: seasons of rounds with points, a named rival who talks, a
@@ -540,6 +542,13 @@ export function bindUI() {
     if (S.race.tt) { startRace(S.race.trackIndex, S.race.variant, { tt: true, quick: true }); return; }
     if (!tryStart(S.race.trackIndex, S.race.variant, false)) setScreen('tracks');
   });
+  // v1.9: the controls, Analog (the stick under the right thumb) or Classic (the GAS button)
+  const ctlLabel = () => { document.getElementById('pause-ctl').textContent = 'CONTROLS: ' + (G.ctl === 'classic' ? 'CLASSIC' : 'ANALOG'); };
+  document.getElementById('pause-ctl').addEventListener('click', () => { G.ctl = G.ctl === 'classic' ? 'analog' : 'classic'; G.ctlAsk = false; applyCtl(); ctlLabel(); saveNow(); });
+  const ctlChoose = c => { G.ctl = c; G.ctlAsk = false; applyCtl(); ctlLabel(); saveNow(); document.getElementById('ctl-card').classList.remove('show'); };
+  document.getElementById('ctl-try').addEventListener('click', () => ctlChoose('analog'));
+  document.getElementById('ctl-keep').addEventListener('click', () => ctlChoose('classic'));
+  applyCtl(); ctlLabel();
   document.getElementById('pause-quit').addEventListener('click', () => { S.paused = false; S.race.active = false; document.getElementById('pause-ov').classList.remove('show'); audioRace(false); setScreen('menu'); });
 
   document.getElementById('btn-mute').addEventListener('click', e => {

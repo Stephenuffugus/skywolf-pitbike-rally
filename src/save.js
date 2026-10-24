@@ -31,6 +31,8 @@ function defaults() {
     muted: false,
     sunbeamDay: '', sunbeamEarnedToday: 0,
     dailyLast: '', dailyStreak: 0, title: '',
+    ctl: 'analog',     // v1.9 controls: 'analog' (the stick under the right thumb) or 'classic' (the GAS button)
+    ctlAsk: false,     // v1.9: a save from before it keeps Classic and is offered the new throttle once
   };
 }
 
@@ -64,7 +66,9 @@ export function loadSave() {
   let raw = null;
   try { raw = JSON.parse(localStorage.getItem(SAVE_KEY)); } catch (e) { /* corrupt */ }
   const d = defaults();
+  const old = !!(raw && raw.v && raw.ctl === undefined);
   const g = raw && raw.v ? Object.assign(d, migrate(raw)) : d;
+  if (old) { g.ctl = 'classic'; g.ctlAsk = true; }
   g.tt = g.tt || {};
   g.bestPv = g.bestPv || {};
   g.trophies = g.trophies || {};

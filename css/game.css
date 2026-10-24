@@ -119,8 +119,8 @@ canvas#game{ position:fixed; inset:0; display:block; }
 /* ---- race HUD ---- */
 #hud{ position:fixed; inset:0; display:none; pointer-events:none; z-index:30; }
 #hud.show{ display:block; }
-.hud-top{ position:absolute; top:calc(8px + env(safe-area-inset-top)); left:0; right:0;
-  display:flex; justify-content:center; gap:10px; }
+.hud-top{ position:absolute; top:calc(8px + env(safe-area-inset-top)); left:calc(132px + env(safe-area-inset-left)); right:calc(124px + env(safe-area-inset-right));
+  display:flex; justify-content:center; gap:10px; }   /* v1.9: between the left NITRO (and its pips) and restart + pause */
 .chip{ background:rgba(20,21,26,0.82); border:2px solid #3a3d46; border-radius:12px;
   padding:6px 13px; font-weight:900; font-style:italic; font-size:16px; color:#fff; }
 #hud-pos{ background:var(--plate); color:var(--ink); border-color:#a8890f; min-width:56px; text-align:center; }
@@ -144,7 +144,7 @@ body.tt #btn-restart{ display:block; }
 /* ---- touch controls ---- */
 #controls{ position:fixed; inset:0; display:none; z-index:25; }
 #controls.show{ display:block; }
-#joy-zone{ position:absolute; left:0; top:0; bottom:0; width:46%; }
+#joy-zone{ position:absolute; left:0; top:calc(72px + env(safe-area-inset-top)); bottom:0; width:46%; }   /* v1.9: under the left NITRO */
 #joy-base{ display:none; position:fixed; width:140px; height:140px; border-radius:50%;
   background:rgba(30,32,38,0.55); border:2px solid rgba(120,124,138,0.5); pointer-events:none; }
 #joy-stick{ position:absolute; left:50%; top:50%; width:64px; height:64px; margin:-32px 0 0 -32px;
@@ -162,6 +162,31 @@ body.tt #btn-restart{ display:block; }
 #btn-nitro{ right:calc(20px + env(safe-area-inset-right)); bottom:calc(116px + env(safe-area-inset-bottom));
   width:72px; height:72px; background:radial-gradient(circle at 35% 30%, #a5e2ff, var(--nitro) 60%);
   color:var(--ink); font-size:13px; box-shadow:0 4px 0 #2b7ea6; opacity:0.82; }
+
+/* v1.9: narrow phones keep the whole HUD row clear of the corner buttons (text never under 12 px) */
+@media (max-width:860px){ .hud-top{ gap:6px; } .chip{ font-size:13px; padding:5px 9px; } #hud-pos{ min-width:44px; } }
+@media (max-width:700px){ .hud-top{ gap:4px; } .chip{ font-size:12px; padding:4px 7px; border-radius:10px; } #hud-pos{ min-width:38px; } }
+/* v1.9 the analog throttle: a floating stick under the right thumb (pull down gas, push up brake, flick up nitro) */
+#thr-zone{ position:absolute; right:0; top:calc(64px + env(safe-area-inset-top)); bottom:0; width:54%; display:none; }
+body.ctl-analog #thr-zone{ display:block; }
+body.ctl-analog #btn-gas, body.ctl-analog #btn-nitro{ display:none; }
+#thr-base{ display:none; position:fixed; width:76px; height:168px; border-radius:38px;
+  background:rgba(30,32,38,0.55); border:2px solid rgba(120,124,138,0.5); pointer-events:none; }
+#thr-knob{ position:absolute; left:50%; top:50%; width:60px; height:60px; margin:-30px 0 0 -30px; border-radius:50%;
+  background:var(--plate); box-shadow:0 3px 0 #a8890f, inset 0 -4px 0 rgba(0,0,0,.15); }
+.thr-lab{ position:absolute; left:0; right:0; text-align:center; font-size:11.2px; font-weight:900; letter-spacing:1px; color:rgba(220,223,232,0.75); }
+.thr-up{ top:8px; } .thr-dn{ bottom:8px; }
+#thr-hint{ position:absolute; right:24px; bottom:calc(40px + env(safe-area-inset-bottom)); display:none;
+  color:rgba(200,203,214,0.5); font-size:12px; font-weight:800; text-transform:uppercase; letter-spacing:1.5px; pointer-events:none; }
+body.ctl-analog #thr-hint{ display:block; }
+#btn-nitro-l{ left:calc(10px + env(safe-area-inset-left)); top:calc(8px + env(safe-area-inset-top)); width:56px; height:56px;
+  background:radial-gradient(circle at 35% 30%, #a5e2ff, var(--nitro) 60%); color:var(--ink); font-size:11.2px;
+  box-shadow:0 4px 0 #2b7ea6; opacity:0.82; }
+body.ctl-analog #nitro-pips{ right:auto; bottom:auto; left:calc(74px + env(safe-area-inset-left)); top:calc(26px + env(safe-area-inset-top)); width:auto; }
+#ctl-card{ position:fixed; inset:0; display:none; z-index:45; background:rgba(12,13,16,0.82); align-items:center; justify-content:center; }
+#ctl-card.show{ display:flex; }
+#ctl-card .pause-card{ width:min(420px,86vw); }
+#ctl-card p{ color:#c8cbd6; font-size:14px; line-height:1.4; }
 
 /* ---- pause overlay ---- */
 #pause-ov{ position:fixed; inset:0; display:none; z-index:40; background:rgba(12,13,16,0.78);

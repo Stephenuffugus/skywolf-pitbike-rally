@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-24 — v1.9 The analog throttle (build out Part 1)
+- His idea: a floating stick appears under the right thumb. Pull down for gas, from nothing at 8 px to full at 56 px
+  on a gentle curve, so half throttle is a real coast; push up and hold 120 ms to brake (touch never had a brake, so the
+  brake parts now do something on a phone); flick up for nitro and the gas comes back to where the thumb settles, so
+  nitro never needs the gas thumb to lift.
+- His other note: a NITRO button top left for the steering thumb on a straight (the steer zone starts under it).
+- New saves start on Analog. A save from before keeps the GAS button and is offered the new throttle once; the pause
+  menu switches between them any time. The NITRO popup lost its exclamation mark.
+- Gate: tools/pitbike-tests/p1_gate.mjs in lucid-winds drives the stick with real touch events (CDP).
+
 ## 2026-10-24 — v1.8 Protected earnings and versioned records (build out Part 0)
 - The career no longer wears your parts (Astra's review, his call): only the free race mode, the Daily and featured
   races add wear, and the garage repairs them as before. Time trials never did.

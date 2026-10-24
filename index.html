@@ -158,8 +158,23 @@ if (window.Sunbeam) {
   <div id="joy-zone"></div>
   <div id="joy-base"><div id="joy-stick"></div></div>
   <div id="joy-hint">◂ Touch &amp; slide to steer ▸</div>
+  <div id="thr-zone"></div>
+  <div id="thr-base"><span class="thr-lab thr-up">BRAKE</span><div id="thr-knob"></div><span class="thr-lab thr-dn">GAS</span></div>
+  <div id="thr-hint">Pull down for gas · flick up for nitro</div>
+  <button class="ctl-btn" id="btn-nitro-l" aria-label="Nitro">NITRO</button>
   <button class="ctl-btn" id="btn-nitro">NITRO</button>
   <button class="ctl-btn" id="btn-gas">GAS</button>
+</div>
+
+<!-- THE NEW THROTTLE, offered once to a save from before v1.9 -->
+<div id="ctl-card">
+  <div class="pause-card">
+    <h2 class="banner">Try the new throttle</h2>
+    <p>Pull your right thumb down for gas: the further, the faster. Push up and hold to brake. Flick up for nitro without
+      letting go of the gas. The old buttons stay in the pause menu.</p>
+    <button class="plate-btn" id="ctl-try">TRY IT</button>
+    <button class="ghost-btn" id="ctl-keep">KEEP THE BUTTONS</button>
+  </div>
 </div>
 
 <!-- PAUSE -->
@@ -168,6 +183,7 @@ if (window.Sunbeam) {
     <h2 class="banner">Paused</h2>
     <button class="plate-btn" id="pause-resume">RESUME</button>
     <button class="ghost-btn" id="pause-restart">RESTART RACE</button>
+    <button class="ghost-btn" id="pause-ctl">CONTROLS: ANALOG</button>
     <button class="ghost-btn" id="pause-quit">QUIT TO MENU</button>
   </div>
 </div>
