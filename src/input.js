@@ -9,41 +9,50 @@ const JOY_R = 56;
 
 /* v1.9 (his idea, 24 Oct: "an analog stick on the right thumb and the more you pull down the more you accelerate"): a
    floating stick appears under the right thumb. Pull DOWN = gas, from nothing at the 8 px dead zone to full at 56 px on a
-   gentle curve; push UP and hold 120 ms = brake on the same curve (touch never had a brake); a quick FLICK up = nitro, and
-   the gas comes back to wherever the thumb settles, so nitro never needs the gas thumb to lift (his other note). His left
-   NITRO button is the steering thumb's way. Classic (the GAS and NITRO buttons) stays in the settings. */
-export const THR = { DEAD: 8, FULL: 56, EXP: 1.2, BRAKE_HOLD: 0.12, FLICK_V: 600, FLICK_WIN: 0.08, FLICK_MAX: 0.15, STILL: 0.04 };
+   gentle curve; push UP and hold 120 ms = brake on the same curve (touch never had a brake); a FLICK = nitro: a fast move
+   (48 px inside 80 ms) from the gas side to above the centre that comes back down 16 px within 300 ms, so nitro never needs
+   the gas thumb to lift (his other note) and a fast move that stays up (a hard brake, a quick lift to coast) is never
+   nitro. His left NITRO button is the steering thumb's way. Classic (the GAS and NITRO buttons) stays in the settings. */
+export const THR = { DEAD: 8, FULL: 56, EXP: 1.2, BRAKE_HOLD: 0.12, FLICK_V: 600, FLICK_WIN: 0.08, FLICK_TOTAL: 0.3, FLICK_TOP: 8, FLICK_RET: 16, EDGE: 6 };
 export function thrCurve(d) { return d <= THR.DEAD ? 0 : Math.pow(Math.min(1, (d - THR.DEAD) / (THR.FULL - THR.DEAD)), THR.EXP); }
-const thr = { active: false, id: null, cx: 0, cy: 0, y: 0, lastY: 0, lastT: 0, smp: [], upStart: -1, upFast: false, noBrake: false, upSince: -1, flicks: 0 };
+const thr = { active: false, id: null, cx: 0, cy: 0, y: 0, lastY: 0, lastT: 0, smp: [], run: null, upSince: -1, flicks: 0 };
 export const thrState = thr;   // read by the gates
 const now = () => performance.now() / 1000;
 
-/* one upward run of the thumb has ended (a down move, or no move for STILL s): fast and short = a flick = nitro */
-function thrRunEnd() {
-  if (thr.upStart >= 0 && thr.upFast && thr.lastT - thr.upStart <= THR.FLICK_MAX) { thr.flicks++; thr.noBrake = true; fireNitro(); }
-  thr.upStart = -1; thr.upFast = false;
-}
+/* one gesture of the thumb, watched sample by sample (a touch only reports when it moves; at 120 Hz Chrome sends one move
+   per frame): an upward run begins on the gas side and has its top (the peak); it turns FAST when the thumb covers 48 px
+   inside 80 ms; it is a flick when it reached above the centre and the thumb comes back down FLICK_RET px from the peak
+   inside FLICK_TOTAL of turning fast. A slow drift before it only waits (it is timed from turning fast). Anything else
+   (it stays up, it ends with the touch, it never left the gas side) is not a flick. */
 function thrSample(y, t) {
-  // a touch only reports when it moves, so a run that starts from rest began about a frame before its first sample
-  if (y < thr.lastY - 0.5) { if (thr.upStart < 0) thr.upStart = Math.max(thr.lastT, t - 0.017); }
-  else if (y > thr.lastY + 2) thrRunEnd();
+  const R = thr.run, dy = y - thr.cy;
+  if (y < thr.lastY - 0.5) {   // moving up
+    if (!R && thr.lastY - thr.cy >= -THR.DEAD) thr.run = { peak: y, fast: false, tFast: 0 };
+    else if (R && y < R.peak) R.peak = y;
+  }
   thr.smp.push({ t, y }); while (thr.smp.length > 2 && t - thr.smp[1].t > 0.25) thr.smp.shift();
-  // how far up the thumb went in the last FLICK_WIN seconds: where it was then is its last report at or before then
-  // (a still thumb sends nothing), so a flick is at least FLICK_V x FLICK_WIN = 48 px up inside 80 ms
+  // where the thumb was FLICK_WIN ago is its last report at or before then (a still thumb sends nothing)
   let y0 = thr.smp[0].y;
   for (let i = thr.smp.length - 1; i >= 0; i--) if (thr.smp[i].t <= t - THR.FLICK_WIN) { y0 = thr.smp[i].y; break; }
-  if (thr.upStart >= 0 && (y0 - y) / THR.FLICK_WIN > THR.FLICK_V) thr.upFast = true;
+  const r = thr.run;
+  if (r) {
+    if (!r.fast && (y0 - y) / THR.FLICK_WIN > THR.FLICK_V) { r.fast = true; r.tFast = t; }
+    if (r.fast && t - r.tFast > THR.FLICK_TOTAL) thr.run = null;   // fast but no return in time: a push (a brake, a lift)
+    else if (y >= r.peak + THR.FLICK_RET) {   // came back down: a flick if it was fast and went above the centre
+      if (r.fast && r.peak - thr.cy <= -THR.FLICK_TOP) { thr.flicks++; fireNitro(); }
+      thr.run = null;
+    }
+  }
   thr.lastY = y; thr.lastT = t;
 }
 /* the throttle and brake the thumb asks for this frame */
 function thrRead() {
   if (!thr.active) return { throttle: 0, brake: 0 };
-  const t = now();
-  if (thr.upStart >= 0 && t - thr.lastT > THR.STILL) thrRunEnd();
-  const dy = thr.y - thr.cy, up = -dy;
-  if (up > THR.DEAD) { if (thr.upSince < 0) thr.upSince = t; } else { thr.upSince = -1; thr.noBrake = false; }
-  const flicking = thr.upFast && thr.upStart >= 0 && t - thr.upStart <= THR.FLICK_MAX;   // never brake inside a flick
-  const brake = (up > THR.DEAD && !thr.noBrake && !flicking && t - thr.upSince >= THR.BRAKE_HOLD) ? thrCurve(up) : 0;
+  const t = now(), dy = thr.y - thr.cy, up = -dy;
+  if (thr.run && thr.run.fast && t - thr.run.tFast > THR.FLICK_TOTAL) thr.run = null;
+  if (up > THR.DEAD) { if (thr.upSince < 0) thr.upSince = t; } else thr.upSince = -1;
+  // a quick flick is back under the centre inside the hold, so it never brakes; a held push brakes after BRAKE_HOLD
+  const brake = (up > THR.DEAD && t - thr.upSince >= THR.BRAKE_HOLD) ? thrCurve(up) : 0;
   return { throttle: dy > 0 ? thrCurve(dy) : 0, brake };
 }
 
@@ -85,7 +94,9 @@ export function bindInput() {
   joyZone.addEventListener('touchend', joyDone);
   joyZone.addEventListener('touchcancel', joyDone);
   // mouse fallback for desktop testing
+  joyZone.addEventListener('contextmenu', e => e.preventDefault());
   joyZone.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;
     joyStart(e.clientX, e.clientY, 'm');
     const mm = ev => joyMove(ev.clientX, ev.clientY);
     const mu = () => { joyEnd(); removeEventListener('mousemove', mm); removeEventListener('mouseup', mu); };
@@ -102,16 +113,15 @@ export function bindInput() {
   }
   function thrStart(x, y, id) {
     const t = now();
-    Object.assign(thr, { active: true, id, cx: x, cy: y, y, lastY: y, lastT: t, smp: [{ t, y }], upStart: -1, upFast: false, noBrake: false, upSince: -1 });
+    /* the centre sits high enough that a full pull fits above the bottom edge: a thumb landing low starts with some gas */
+    const cy = Math.min(y, innerHeight - THR.FULL - THR.EDGE);
+    Object.assign(thr, { active: true, id, cx: x, cy, y, lastY: y, lastT: t, smp: [{ t, y }], run: null, upSince: -1 });
     thrBase.style.display = 'block';
-    thrBase.style.left = (x - 38) + 'px'; thrBase.style.top = (y - 84) + 'px';
+    thrBase.style.left = (x - 38) + 'px'; thrBase.style.top = (cy - 84) + 'px';
     thrDraw();
   }
   function thrMove(y) { thr.y = y; thrSample(y, now()); thrDraw(); }
-  function thrEnd() {
-    if (thr.upStart >= 0) thrRunEnd();
-    thr.active = false; thr.id = null; thrBase.style.display = 'none';
-  }
+  function thrEnd() { thr.active = false; thr.id = null; thr.run = null; thrBase.style.display = 'none'; }
   thrZone.addEventListener('touchstart', e => {
     e.preventDefault();
     const t = e.changedTouches[0];
@@ -124,7 +134,9 @@ export function bindInput() {
   const thrDone = e => { for (const t of e.changedTouches) if (t.identifier === thr.id) thrEnd(); };
   thrZone.addEventListener('touchend', thrDone);
   thrZone.addEventListener('touchcancel', thrDone);
+  thrZone.addEventListener('contextmenu', e => e.preventDefault());
   thrZone.addEventListener('mousedown', e => {
+    if (e.button !== 0) return;   // the left button only: a right click's menu would swallow the mouseup
     thrStart(e.clientX, e.clientY, 'm');
     const mm = ev => thrMove(ev.clientY);
     const mu = () => { thrEnd(); removeEventListener('mousemove', mm); removeEventListener('mouseup', mu); };
@@ -162,13 +174,13 @@ export function bindInput() {
 export function applyCtl() {
   const a = S.G.ctl !== 'classic';
   document.body.classList.toggle('ctl-analog', a);
-  if (!a && thr.active) { thr.active = false; thr.id = null; const b = document.getElementById('thr-base'); if (b) b.style.display = 'none'; }
+  if (!a && thr.active) { thr.active = false; thr.id = null; thr.run = null; const b = document.getElementById('thr-base'); if (b) b.style.display = 'none'; }
 }
 
 function fireNitro() {
   const p = S.bikes[0];
   const race = S.race;
-  if (p && race.started && !race.over && p.nitro > 0 && p.nitroT <= 0) {
+  if (p && race.started && !race.over && !S.paused && p.nitro > 0 && p.nitroT <= 0) {
     p.nitro--; p.nitroT = 1.6; p.m_usedNitro = true;
     popup(p.x, p.y - 24, 'NITRO', '#5fc9ff'); audioNitro();
   }

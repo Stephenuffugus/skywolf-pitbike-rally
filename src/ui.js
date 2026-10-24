@@ -540,6 +540,8 @@ export function bindUI() {
   document.getElementById('pause-restart').addEventListener('click', () => {
     S.paused = false; document.getElementById('pause-ov').classList.remove('show');
     if (S.race.tt) { startRace(S.race.trackIndex, S.race.variant, { tt: true, quick: true }); return; }
+    // v1.9 (review): a career round restarts as the same career round (no fee, no wear), before its result commits
+    if (S.race.career) { startRace(S.race.trackIndex, S.race.variant, { career: true, quick: true }); return; }
     if (!tryStart(S.race.trackIndex, S.race.variant, false)) setScreen('tracks');
   });
   // v1.9: the controls, Analog (the stick under the right thumb) or Classic (the GAS button)

@@ -119,8 +119,8 @@ canvas#game{ position:fixed; inset:0; display:block; }
 /* ---- race HUD ---- */
 #hud{ position:fixed; inset:0; display:none; pointer-events:none; z-index:30; }
 #hud.show{ display:block; }
-.hud-top{ position:absolute; top:calc(8px + env(safe-area-inset-top)); left:calc(132px + env(safe-area-inset-left)); right:calc(124px + env(safe-area-inset-right));
-  display:flex; justify-content:center; gap:10px; }   /* v1.9: between the left NITRO (and its pips) and restart + pause */
+.hud-top{ position:absolute; top:calc(8px + env(safe-area-inset-top)); left:calc(76px + env(safe-area-inset-left)); right:calc(124px + env(safe-area-inset-right));
+  display:flex; flex-wrap:nowrap; justify-content:center; gap:10px; }   /* v1.9: between the left NITRO and restart + pause */
 .chip{ background:rgba(20,21,26,0.82); border:2px solid #3a3d46; border-radius:12px;
   padding:6px 13px; font-weight:900; font-style:italic; font-size:16px; color:#fff; }
 #hud-pos{ background:var(--plate); color:var(--ink); border-color:#a8890f; min-width:56px; text-align:center; }
@@ -182,7 +182,8 @@ body.ctl-analog #thr-hint{ display:block; }
 #btn-nitro-l{ left:calc(10px + env(safe-area-inset-left)); top:calc(8px + env(safe-area-inset-top)); width:56px; height:56px;
   background:radial-gradient(circle at 35% 30%, #a5e2ff, var(--nitro) 60%); color:var(--ink); font-size:11.2px;
   box-shadow:0 4px 0 #2b7ea6; opacity:0.82; }
-body.ctl-analog #nitro-pips{ right:auto; bottom:auto; left:calc(74px + env(safe-area-inset-left)); top:calc(26px + env(safe-area-inset-top)); width:auto; }
+body.ctl-analog #nitro-pips{ right:auto; bottom:auto; left:calc(10px + env(safe-area-inset-left)); top:calc(67px + env(safe-area-inset-top)); width:56px; gap:3px; }
+body.ctl-analog #nitro-pips i{ width:6px; height:10px; border-radius:3px; }   /* up to six under the button, never under the HUD row */
 #ctl-card{ position:fixed; inset:0; display:none; z-index:45; background:rgba(12,13,16,0.82); align-items:center; justify-content:center; }
 #ctl-card.show{ display:flex; }
 #ctl-card .pause-card{ width:min(420px,86vw); }

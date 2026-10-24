@@ -122,7 +122,8 @@ export function startRace(ti, variant, opts) {
 
   // ghost of your best lap on this config
   const ghost = G.ghosts[configKey(ti, variant)];
-  race.ghost = ghost && ghost.pts && ghost.pts.length >= 6 && (ghost.pv || 1) === PHYS_V ? ghost : null;   // only a lap from these physics
+  // only a lap from these physics, and never on the Daily (one key for every day's different track: review, v1.9)
+  race.ghost = !def.daily && ghost && ghost.pts && ghost.pts.length >= 6 && (ghost.pv || 1) === PHYS_V ? ghost : null;
 
   for (const p of S.track.pickups) { p.active = true; p.timer = 0; }
   clearFx();
@@ -330,13 +331,15 @@ function finishTimeTrial() {
   let medalPay = 0;
   for (const m of newMedals) medalPay += EC.tt.pay[m];
   rec.medals = rec.medals.concat(newMedals);
-  // a best from older physics is not a time to beat; earned medals stay earned
-  const record = bestMs > 0 && (!rec.best || (rec.pv || 1) !== PHYS_V || bestMs < rec.best);
+  // a best from OLDER physics is not a time to beat; one from newer physics (a phone on a cached older page) is left alone
+  const rpv = rec.pv || 1;
+  const record = bestMs > 0 && rpv <= PHYS_V && (!rec.best || rpv < PHYS_V || bestMs < rec.best);
   if (record) { rec.best = bestMs; rec.pv = PHYS_V; }
   G.tt[key] = rec;
   if (p.bestLapStream && p.bestLapStream.length >= 6 && bestMs > 0) {
     const existing = G.ghosts[key];
-    if (!existing || (existing.pv || 1) !== PHYS_V || bestMs < existing.ms) G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream, pv: PHYS_V };
+    const epv = existing ? (existing.pv || 1) : 0;
+    if (!existing || epv < PHYS_V || (epv === PHYS_V && bestMs < existing.ms)) G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream, pv: PHYS_V };
   }
   G.wallet += medalPay; G.earnings += medalPay;
   saveNow();
@@ -383,13 +386,13 @@ export function finishRace() {
 
   const ms = Math.round(p.finishTime * 1000) || Math.round(race.t * 1000);
   const bpv = (G.bestPv && G.bestPv[key]) || 1;
-  if (p.finished && (!G.best[key] || bpv !== PHYS_V || ms < G.best[key])) { G.best[key] = ms; G.bestPv[key] = PHYS_V; }
+  if (p.finished && bpv <= PHYS_V && (!G.best[key] || bpv < PHYS_V || ms < G.best[key])) { G.best[key] = ms; G.bestPv[key] = PHYS_V; }
 
   // ghost: store this config's best lap stream
-  if (p.bestLapStream && p.bestLapStream.length >= 6) {
+  if (!def.daily && p.bestLapStream && p.bestLapStream.length >= 6) {
     const bestMs = Math.round(p.bestLap * 1000);
-    const existing = G.ghosts[key];
-    if (!existing || (existing.pv || 1) !== PHYS_V || bestMs < existing.ms) {
+    const existing = G.ghosts[key], epv = existing ? (existing.pv || 1) : 0;
+    if (!existing || epv < PHYS_V || (epv === PHYS_V && bestMs < existing.ms)) {
       G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream, pv: PHYS_V };
     }
   }
