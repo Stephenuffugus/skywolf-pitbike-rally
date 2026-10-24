@@ -13,7 +13,7 @@ const JOY_R = 56;
    (48 px inside 80 ms) from the gas side to above the centre that comes back down 16 px within 300 ms, so nitro never needs
    the gas thumb to lift (his other note) and a fast move that stays up (a hard brake, a quick lift to coast) is never
    nitro. His left NITRO button is the steering thumb's way. Classic (the GAS and NITRO buttons) stays in the settings. */
-export const THR = { DEAD: 8, FULL: 56, EXP: 1.2, BRAKE_HOLD: 0.12, FLICK_V: 600, FLICK_WIN: 0.08, FLICK_TOTAL: 0.3, FLICK_TOP: 8, FLICK_RET: 16, EDGE: 6 };
+export const THR = { DEAD: 8, FULL: 56, EXP: 1.2, BRAKE_HOLD: 0.12, BRAKE_MIN: 0.27, FLICK_V: 600, FLICK_WIN: 0.08, FLICK_TOTAL: 0.4, FLICK_TOP: 8, FLICK_RET: 16, FLICK_DWELL: 0.08, EDGE: 6 };
 export function thrCurve(d) { return d <= THR.DEAD ? 0 : Math.pow(Math.min(1, (d - THR.DEAD) / (THR.FULL - THR.DEAD)), THR.EXP); }
 const thr = { active: false, id: null, cx: 0, cy: 0, y: 0, lastY: 0, lastT: 0, smp: [], run: null, upSince: -1, flicks: 0 };
 export const thrState = thr;   // read by the gates
@@ -21,25 +21,30 @@ const now = () => performance.now() / 1000;
 
 /* one gesture of the thumb, watched sample by sample (a touch only reports when it moves; at 120 Hz Chrome sends one move
    per frame): an upward run begins on the gas side and has its top (the peak); it turns FAST when the thumb covers 48 px
-   inside 80 ms; it is a flick when it reached above the centre and the thumb comes back down FLICK_RET px from the peak
-   inside FLICK_TOTAL of turning fast. A slow drift before it only waits (it is timed from turning fast). Anything else
-   (it stays up, it ends with the touch, it never left the gas side) is not a flick. */
+   inside 80 ms; it is a flick when it reached above the centre, did not
+   rest at its top (FLICK_DWELL: resting there is a brake dab) and the thumb comes BACK to the gas side (FLICK_RET from the
+   peak, and past the dead zone: a braking thumb that only eases is still braking) inside FLICK_TOTAL of turning fast.
+   A slow drift before it only waits (it is timed from turning fast). Anything else is not a flick. */
 function thrSample(y, t) {
   const R = thr.run, dy = y - thr.cy;
   if (y < thr.lastY - 0.5) {   // moving up
-    if (!R && thr.lastY - thr.cy >= -THR.DEAD) thr.run = { peak: y, fast: false, tFast: 0 };
-    else if (R && y < R.peak) R.peak = y;
+    if (!R && thr.lastY - thr.cy >= -THR.DEAD) thr.run = { peak: y, peakT: t, leftT: 0, fast: false, tFast: 0 };
+    else if (R && y < R.peak) { R.peak = y; R.peakT = t; R.leftT = 0; }
   }
   thr.smp.push({ t, y }); while (thr.smp.length > 2 && t - thr.smp[1].t > 0.25) thr.smp.shift();
   // where the thumb was FLICK_WIN ago is its last report at or before then (a still thumb sends nothing)
+  // where the thumb was FLICK_WIN ago is its last report at or before then (a still thumb sends nothing, so a flick from
+  // rest reads at full speed; a push slowed by a stalled frame can read fast too: the samples cannot tell them apart)
   let y0 = thr.smp[0].y;
   for (let i = thr.smp.length - 1; i >= 0; i--) if (thr.smp[i].t <= t - THR.FLICK_WIN) { y0 = thr.smp[i].y; break; }
   const r = thr.run;
   if (r) {
+    if (y - r.peak > 4 && !r.leftT) r.leftT = t;   // left its top: it rested there until about a frame before (still thumbs send nothing)
     if (!r.fast && (y0 - y) / THR.FLICK_WIN > THR.FLICK_V) { r.fast = true; r.tFast = t; }
     if (r.fast && t - r.tFast > THR.FLICK_TOTAL) thr.run = null;   // fast but no return in time: a push (a brake, a lift)
-    else if (y >= r.peak + THR.FLICK_RET) {   // came back down: a flick if it was fast and went above the centre
-      if (r.fast && r.peak - thr.cy <= -THR.FLICK_TOP) { thr.flicks++; fireNitro(); }
+    else if (y >= r.peak + THR.FLICK_RET && (!r.fast || y - thr.cy >= -THR.DEAD)) {   // back down, and (if fast) back on the gas side
+      const dwell = (r.leftT || t) - 0.017 - r.peakT;   // how long it rested at its top: a brake dab rests, a flick turns
+      if (r.fast && r.peak - thr.cy <= -THR.FLICK_TOP && dwell <= THR.FLICK_DWELL) { thr.flicks++; fireNitro(); }
       thr.run = null;
     }
   }
@@ -52,7 +57,8 @@ function thrRead() {
   if (thr.run && thr.run.fast && t - thr.run.tFast > THR.FLICK_TOTAL) thr.run = null;
   if (up > THR.DEAD) { if (thr.upSince < 0) thr.upSince = t; } else thr.upSince = -1;
   // a quick flick is back under the centre inside the hold, so it never brakes; a held push brakes after BRAKE_HOLD
-  const brake = (up > THR.DEAD && t - thr.upSince >= THR.BRAKE_HOLD) ? thrCurve(up) : 0;
+  // the lightest brake already slows like letting go (520 x 0.27 = the 140 coast): pushing up never rolls further
+  const brake = (up > THR.DEAD && t - thr.upSince >= THR.BRAKE_HOLD) ? THR.BRAKE_MIN + (1 - THR.BRAKE_MIN) * thrCurve(up) : 0;
   return { throttle: dy > 0 ? thrCurve(dy) : 0, brake };
 }
 

@@ -3,16 +3,17 @@
 ## 2026-10-24 — v1.9 The analog throttle (build out Part 1)
 - His idea: a floating stick appears under the right thumb. Pull down for gas, from nothing at 8 px to full at 56 px
   on a gentle curve, so half throttle is a real coast; push up and hold 120 ms to brake (touch never had a brake, so the
-  brake parts now do something on a phone); flick up for nitro: a fast move from the gas to above the centre that comes
-  back down, so nitro never needs the gas thumb to lift and a fast move that stays up (a hard brake, a quick lift to
-  coast) is never nitro. A thumb landing low starts with the centre lifted, so full gas always fits above the edge.
+  brake parts now do something on a phone, and the lightest brake already slows like letting go); flick up and back for
+  nitro: a fast move from the gas to above the centre that turns at once and comes back to the gas side, so nitro never
+  needs the gas thumb to lift, and a hard brake (even one that eases), a brake dab or a quick lift is never nitro. A
+  thumb landing low starts with the centre lifted, so full gas always fits above the edge.
 - His other note: a NITRO button top left for the steering thumb on a straight (the steer zone starts under it).
 - New saves start on Analog. A save from before keeps the GAS button and is offered the new throttle once; the pause
   menu switches between them any time. The NITRO popup lost its exclamation mark. Nitro never fires while paused; the
   nitro pips sit under the left NITRO; the HUD row fits between the corner buttons on narrow phones.
 - From the v1.8 review: RESTART RACE in the pause menu restarts a career round as the same career round (it used to
   start a paid free race with wear and no points); a record set under newer physics is left alone by an older cached
-  page; the Daily never races yesterday's ghost on today's track.
+  page; the Daily never races yesterday's ghost on today's track; restarting today's 2x featured race keeps the 2x.
 - Gate: tools/pitbike-tests/p1_gate.mjs in lucid-winds drives the stick with real touch events (CDP).
 
 ## 2026-10-24 — v1.8 Protected earnings and versioned records (build out Part 0)

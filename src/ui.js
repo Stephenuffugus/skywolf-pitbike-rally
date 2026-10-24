@@ -514,7 +514,7 @@ export function bindUI() {
   document.getElementById('garage-back').addEventListener('click', () => setScreen('menu'));
   document.getElementById('res-again').addEventListener('click', () => {
     if (S.race.tt) { startRace(S.race.trackIndex, S.race.variant, { tt: true, quick: true }); return; }
-    if (!tryStart(S.race.trackIndex, S.race.variant, false)) setScreen('tracks');
+    if (!tryStart(S.race.trackIndex, S.race.variant, S.race.featured)) setScreen('tracks');   // keeps today's 2x (review)
   });
   document.getElementById('res-next').addEventListener('click', () => {
     if (S.race.career) { setScreen('career'); return; }
@@ -542,7 +542,7 @@ export function bindUI() {
     if (S.race.tt) { startRace(S.race.trackIndex, S.race.variant, { tt: true, quick: true }); return; }
     // v1.9 (review): a career round restarts as the same career round (no fee, no wear), before its result commits
     if (S.race.career) { startRace(S.race.trackIndex, S.race.variant, { career: true, quick: true }); return; }
-    if (!tryStart(S.race.trackIndex, S.race.variant, false)) setScreen('tracks');
+    if (!tryStart(S.race.trackIndex, S.race.variant, S.race.featured)) setScreen('tracks');   // keeps today's 2x (review)
   });
   // v1.9: the controls, Analog (the stick under the right thumb) or Classic (the GAS button)
   const ctlLabel = () => { document.getElementById('pause-ctl').textContent = 'CONTROLS: ' + (G.ctl === 'classic' ? 'CLASSIC' : 'ANALOG'); };
