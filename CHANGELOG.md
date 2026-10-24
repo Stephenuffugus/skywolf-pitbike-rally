@@ -1,5 +1,13 @@
 # Changelog
 
+## 2026-10-24 — v1.8 Protected earnings and versioned records (build out Part 0)
+- The career no longer wears your parts (Astra's review, his call): only the free race mode, the Daily and featured
+  races add wear, and the garage repairs them as before. Time trials never did.
+- Every record now carries the physics it was set under (`physV` on the save, `pv` on time trial bests, ghosts and race
+  bests; the save goes v2 to v3 and keeps every field byte for byte). A lap from older physics is never raced as a ghost,
+  compared or beaten by a lap from newer physics. Physics is version 1; nothing about the riding changed.
+- Dev hook: `__PBR.finishRace` and `__PBR.saveNow` for the gates.
+
 ## 2026-10-22 — v1.7 Career seasons with a rival (packet B)
 - CAREER on the menu: three seasons (Rookie Cup 6 rounds, Pro Tour 8,
   Ironman Series 8) built from the authored tracks and variants, no entry

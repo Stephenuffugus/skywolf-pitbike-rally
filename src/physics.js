@@ -1,4 +1,7 @@
 /* Bike physics + AI, ported unchanged from the prototype; FX hooks added. */
+/* PHYS_V: the physics version every record is stamped with (v1.8). Bump it in the same change as any physics number, so a
+   lap from older physics is never compared with, raced as a ghost against or beaten by a lap from newer physics. */
+export const PHYS_V = 1;
 import { S, popup } from './state.js';
 import { nearestIdx } from './track.js';
 import { spawnFx } from './fx.js';

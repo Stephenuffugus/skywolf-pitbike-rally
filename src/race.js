@@ -2,7 +2,7 @@
    recording, golden spawn), finish (payouts, wear, medals, set bonus). */
 import { S, bikeStats, popup, configKey, circuitOf, ttTargets, ttTierFor, TT_ORDER, seasonById, seasonOthers, seasonPlace } from './state.js';
 import { buildTrack, applyVariant, prerenderTrack } from './track.js';
-import { makeBike, updateBike, updateAI, bikeCollisions, racePositions } from './physics.js';
+import { makeBike, updateBike, updateAI, bikeCollisions, racePositions, PHYS_V } from './physics.js';
 import { setTrackCanvas } from './render.js';
 import { clearFx, updateFx } from './fx.js';
 import { hudInit, hudUpdate } from './hud.js';
@@ -122,7 +122,7 @@ export function startRace(ti, variant, opts) {
 
   // ghost of your best lap on this config
   const ghost = G.ghosts[configKey(ti, variant)];
-  race.ghost = ghost && ghost.pts && ghost.pts.length >= 6 ? ghost : null;
+  race.ghost = ghost && ghost.pts && ghost.pts.length >= 6 && (ghost.pv || 1) === PHYS_V ? ghost : null;   // only a lap from these physics
 
   for (const p of S.track.pickups) { p.active = true; p.timer = 0; }
   clearFx();
@@ -330,12 +330,13 @@ function finishTimeTrial() {
   let medalPay = 0;
   for (const m of newMedals) medalPay += EC.tt.pay[m];
   rec.medals = rec.medals.concat(newMedals);
-  const record = bestMs > 0 && (!rec.best || bestMs < rec.best);
-  if (record) rec.best = bestMs;
+  // a best from older physics is not a time to beat; earned medals stay earned
+  const record = bestMs > 0 && (!rec.best || (rec.pv || 1) !== PHYS_V || bestMs < rec.best);
+  if (record) { rec.best = bestMs; rec.pv = PHYS_V; }
   G.tt[key] = rec;
   if (p.bestLapStream && p.bestLapStream.length >= 6 && bestMs > 0) {
     const existing = G.ghosts[key];
-    if (!existing || bestMs < existing.ms) G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream };
+    if (!existing || (existing.pv || 1) !== PHYS_V || bestMs < existing.ms) G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream, pv: PHYS_V };
   }
   G.wallet += medalPay; G.earnings += medalPay;
   saveNow();
@@ -381,18 +382,21 @@ export function finishRace() {
   if (place === 0) G.wins++;
 
   const ms = Math.round(p.finishTime * 1000) || Math.round(race.t * 1000);
-  if (p.finished && (!G.best[key] || ms < G.best[key])) G.best[key] = ms;
+  const bpv = (G.bestPv && G.bestPv[key]) || 1;
+  if (p.finished && (!G.best[key] || bpv !== PHYS_V || ms < G.best[key])) { G.best[key] = ms; G.bestPv[key] = PHYS_V; }
 
   // ghost: store this config's best lap stream
   if (p.bestLapStream && p.bestLapStream.length >= 6) {
     const bestMs = Math.round(p.bestLap * 1000);
     const existing = G.ghosts[key];
-    if (!existing || bestMs < existing.ms) {
-      G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream };
+    if (!existing || (existing.pv || 1) !== PHYS_V || bestMs < existing.ms) {
+      G.ghosts[key] = { ms: bestMs, hz: GHOST_HZ, pts: p.bestLapStream, pv: PHYS_V };
     }
   }
 
-  applyRaceWear(race.laps);
+  // v1.8 (Astra N08, his call 24 Oct): the career wears nothing (time trials return before this); the free race mode,
+  // the Daily and featured races wear as they always did, and the garage repairs them
+  if (!race.career) applyRaceWear(race.laps);
   earnSunbeams(place);
   // career: points by finishing place for all four, the round advances
   let careerInfo = null;

@@ -7,12 +7,13 @@ import { bindUI, setScreen } from './ui.js';
 import { bindInput, applyPlayerInput } from './input.js';
 import { updateRace } from './race.js';
 import { render, resize } from './render.js';
-import { startRace } from './race.js';
+import { startRace, finishRace } from './race.js';
+import { saveNow } from './save.js';
 
 async function boot() {
   // set the debug/watchdog handle BEFORE any await: the index.html watchdog
   // uses its absence to detect a dead module graph (mixed-version cache)
-  window.__PBR = { S, startRace, setScreen };
+  window.__PBR = { S, startRace, setScreen, finishRace, saveNow };   // finishRace + saveNow: the v1.8 gates
   await loadData();
   loadSave();
   // parallel: terrain never depends on the atlas, and both gate the prerender
